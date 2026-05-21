@@ -44,10 +44,6 @@ Each topic block follows: **Context → Mental model → Tool walkthrough → Ha
 
 ---
 
-## Topic coverage map
-
----
-
 ## Story bank target — Leadership Principles
 
 By Day 13 you should have ~12–15 stories tagged to LPs, with at least one strong story per LP. Distribution across the curriculum:
