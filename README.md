@@ -1,8 +1,6 @@
 # 14-Day Curriculum — AWS Systems Engineer Interview Prep
 
-**Interview date:** Tuesday, May 12, 2026
-**Start date:** Tuesday, April 28, 2026
-**Daily commitment:** ~7 hours every day, including weekends
+**Daily commitment:** ~3 hours every day, including weekends
 
 ---
 
