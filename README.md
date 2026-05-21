@@ -4,13 +4,13 @@
 
 ---
 
-## Daily structure (~7 hours)
+## Daily structure (~3 hours)
 
 | Block | Duration | Focus |
 |---|---|---|
-| Morning | ~3h | Concepts + reading. New material lands here while you're fresh. |
-| Midday | ~2.5h | Hands-on labs. Run commands, break things, observe. |
-| Afternoon | ~1.5h | Drills + behavioral. Past-question repetition, one LP/STAR story per day. |
+| Morning | ~1h | Concepts + reading. New material lands here while you're fresh. |
+| Midday | ~1.5h | Hands-on labs. Run commands, break things, observe. |
+| Afternoon | ~0.5h | Drills + behavioral. Past-question repetition, one LP/STAR story per day. |
 
 Each topic block follows: **Context → Mental model → Tool walkthrough → Hands-on exercises → Self-check questions** (with folded answers).
 
