@@ -1,4 +1,4 @@
-# Day 1 — Linux Fundamentals (Tue Apr 28)
+# Day 1 — Linux Fundamentals
 
 The interview will pull on these threads constantly: "disk full but `df` says space available" → inode exhaustion. "I deleted the file but disk is still full" → open FD holding the inode. "Hardlink survives the original being deleted, why?" → because the original was never special. Today builds the mental model that makes those answers automatic.
 
