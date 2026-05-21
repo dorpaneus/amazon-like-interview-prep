@@ -22,11 +22,11 @@ Each topic block follows: **Context → Mental model → Tool walkthrough → Ha
 
 | Day | Date | Focus | LP Story |
 |---|---|---|---|
-| 1 | Tue Apr 28 | Linux fundamentals — files, permissions, `ls -l` columns, hard/symlinks, basic commands | Ownership |
-| 2 | Wed Apr 29 | Processes & `/proc` — `ps`, `top`, signals, where tools get their data | Dive Deep |
-| 3 | Thu Apr 30 | Filesystems — mount, `fsck`, LVM recovery, LUKS, iSCSI | Insist on the Highest Standards |
-| 4 | Fri May 1 | Boot & systemd — GRUB, services, recovery, regaining root | Bias for Action |
-| 5 | Sat May 2 | Networking I — TCP/IP, DNS, DHCP, "what happens when I load a website" | Customer Obsession |
+| 1 | Linux fundamentals — files, permissions, `ls -l` columns, hard/symlinks, basic commands | Ownership |
+| 2 | Processes & `/proc` — `ps`, `top`, signals, where tools get their data | Dive Deep |
+| 3 | Filesystems — mount, `fsck`, LVM recovery, LUKS, iSCSI | Insist on the Highest Standards |
+| 4 | Boot & systemd — GRUB, services, recovery, regaining root | Bias for Action |
+| 5 | Networking I — TCP/IP, DNS, DHCP, "what happens when I load a website" | Customer Obsession |
 | 6 | Sun May 3 | Networking II — `tcpdump`, `ss`, `mtr`, firewall, traffic inspection | Earn Trust |
 | 7 | Mon May 4 | Scripting & log parsing — Python, regex, Bash idioms (the live-coding question) | Deliver Results |
 
