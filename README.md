@@ -1,4 +1,3 @@
-# amazon-interview-prep
 # 14-Day Curriculum — AWS Systems Engineer Interview Prep
 
 **Interview date:** Tuesday, May 12, 2026
