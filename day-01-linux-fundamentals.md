@@ -4,9 +4,9 @@ The interview will pull on these threads constantly: "disk full but `df` says sp
 
 ---
 
-## Morning Block (3h) — The Unix file model
+## Morning Block (1h) — The Unix file model
 
-### 1A. Everything is a file (45 min)
+### 1A. Everything is a file
 
 Mental model: a Linux file is **two things glued together**:
 
