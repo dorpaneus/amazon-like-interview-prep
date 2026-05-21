@@ -46,29 +46,6 @@ Each topic block follows: **Context → Mental model → Tool walkthrough → Ha
 
 ## Topic coverage map
 
-How the 14 days cover each section of the prep doc:
-
-| Reference doc section | Days covered |
-|---|---|
-| Past interview questions (`ls -l`, slow app, DNS, DHCP, log parsing, perf debugging, `top` data source, symlinks) | 1, 2, 5, 6, 7, 8, 11 |
-| RHCA Troubleshooting — methodology, system info | 2, 8 |
-| RHCA Troubleshooting — boot & startup | 4 |
-| RHCA Troubleshooting — hardware, kernel modules | 9, 11 |
-| RHCA Troubleshooting — filesystems, LVM, LUKS, iSCSI | 3 |
-| RHCA Troubleshooting — package management, RPM | 12 |
-| RHCA Troubleshooting — network connectivity | 5, 6 |
-| RHCA Troubleshooting — application debugging | 7, 11 |
-| RHCA Troubleshooting — SELinux, PAM, LDAP, Kerberos | 12 |
-| RHCA Troubleshooting — kdump, SystemTap, sosreport | 11, 12 |
-| RHCA Performance — analysis tools (vmstat, iostat, sar, PCP) | 8 |
-| RHCA Performance — kernel tuning (sysctl, /proc/sys) | 9, 10 |
-| RHCA Performance — eBPF, SystemTap, perf | 11 |
-| RHCA Performance — process priorities, tuned, cgroups | 11 |
-| RHCA Performance — memory (hugepages, swap, NUMA) | 9 |
-| RHCA Performance — disk/FS tuning (schedulers, dirty pages) | 10 |
-| RHCA Performance — network tuning (BDP, buffers) | 10 |
-| Amazon Leadership Principles (16) — STAR stories | 1–13 (one/day, intensive on 13) |
-
 ---
 
 ## Story bank target — Leadership Principles
