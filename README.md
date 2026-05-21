@@ -27,20 +27,20 @@ Each topic block follows: **Context → Mental model → Tool walkthrough → Ha
 | 3 | Filesystems — mount, `fsck`, LVM recovery, LUKS, iSCSI | Insist on the Highest Standards |
 | 4 | Boot & systemd — GRUB, services, recovery, regaining root | Bias for Action |
 | 5 | Networking I — TCP/IP, DNS, DHCP, "what happens when I load a website" | Customer Obsession |
-| 6 | Sun May 3 | Networking II — `tcpdump`, `ss`, `mtr`, firewall, traffic inspection | Earn Trust |
-| 7 | Mon May 4 | Scripting & log parsing — Python, regex, Bash idioms (the live-coding question) | Deliver Results |
+| 6 | Networking II — `tcpdump`, `ss`, `mtr`, firewall, traffic inspection | Earn Trust |
+| 7 | Scripting & log parsing — Python, regex, Bash idioms (the live-coding question) | Deliver Results |
 
 ## Week 2 — Performance, Advanced, Behavioral
 
 | Day | Date | Focus | LP Story |
 |---|---|---|---|
-| 8 | Tue May 5 | Performance analysis — `vmstat`, `iostat`, `sar`, USE method, PCP | Are Right, A Lot |
-| 9 | Wed May 6 | Memory tuning — hugepages, swappiness, NUMA, OOM, overcommit | Learn and Be Curious |
-| 10 | Thu May 7 | Disk/network tuning — I/O schedulers, BDP, buffer sizing | Invent and Simplify |
-| 11 | Fri May 8 | App debugging — `strace`, `gdb`, `valgrind`, `perf`, eBPF/bcc | Think Big |
-| 12 | Sat May 9 | Security & packages — SELinux, PAM, LDAP/Kerberos, dnf/RPM recovery | Have Backbone; Disagree and Commit |
-| 13 | Sun May 10 | Behavioral intensive — STAR for remaining LPs, mock loop | (covers Frugality, Hire/Develop, Earth's Best Employer, Success and Scale) |
-| 14 | Mon May 11 | Light review + rest — drills, no new material, sleep early | Final mock + rest |
+| 8 | Performance analysis — `vmstat`, `iostat`, `sar`, USE method, PCP | Are Right, A Lot |
+| 9 | Memory tuning — hugepages, swappiness, NUMA, OOM, overcommit | Learn and Be Curious |
+| 10 | Disk/network tuning — I/O schedulers, BDP, buffer sizing | Invent and Simplify |
+| 11 | App debugging — `strace`, `gdb`, `valgrind`, `perf`, eBPF/bcc | Think Big |
+| 12 | Security & packages — SELinux, PAM, LDAP/Kerberos, dnf/RPM recovery | Have Backbone; Disagree and Commit |
+| 13 | Behavioral intensive — STAR for remaining LPs, mock loop | (covers Frugality, Hire/Develop, Earth's Best Employer, Success and Scale) |
+| 14 | Light review + rest — drills, no new material, sleep early | Final mock + rest |
 
 ---
 
