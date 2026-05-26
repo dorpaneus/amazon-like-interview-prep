@@ -1,6 +1,7 @@
 # 14-Day Curriculum — AWS Systems Engineer Interview Prep
 
 **Daily commitment:** ~3 hours every day, including weekends
+**Progress:** Days 1–11 written · Days 12–14 pending
 
 ---
 
@@ -18,27 +19,49 @@ Each topic block follows: **Context → Mental model → Tool walkthrough → Ha
 
 ## Week 1 — Foundations & Core Troubleshooting
 
-| Day | Date | Focus | LP Story |
-|---|---|---|---|
-| 1 | Linux fundamentals — files, permissions, `ls -l` columns, hard/symlinks, basic commands | Ownership |
-| 2 | Processes & `/proc` — `ps`, `top`, signals, where tools get their data | Dive Deep |
-| 3 | Filesystems — mount, `fsck`, LVM recovery, LUKS, iSCSI | Insist on the Highest Standards |
-| 4 | Boot & systemd — GRUB, services, recovery, regaining root | Bias for Action |
-| 5 | Networking I — TCP/IP, DNS, DHCP, "what happens when I load a website" | Customer Obsession |
-| 6 | Networking II — `tcpdump`, `ss`, `mtr`, firewall, traffic inspection | Earn Trust |
-| 7 | Scripting & log parsing — Python, regex, Bash idioms (the live-coding question) | Deliver Results |
+| Day | Topic | LP Story |
+|---|---|---|
+| 1 | [Linux fundamentals — files, permissions, `ls -l` columns, hard/symlinks, basic commands](14-days/day-01-linux-fundamentals.md) | Ownership |
+| 2 | [Processes & `/proc` — `ps`, `top`, signals, where tools get their data](14-days/day-02-processes-proc-signals.md) | Dive Deep |
+| 3 | [Filesystems — mount, `fsck`, LVM recovery, LUKS, iSCSI](14-days/day-03-filesystems-lvm-luks-iscsi.md) | Insist on the Highest Standards |
+| 4 | [Boot & systemd — GRUB, services, recovery, regaining root](14-days/day-04-boot-grub-systemd.md) | Bias for Action |
+| 5 | [Networking I — TCP/IP, DNS, DHCP, "what happens when I load a website"](14-days/day-05-networking-tcp-dns-dhcp.md) | Customer Obsession |
+| 6 | [Networking II — `tcpdump`, `ss`, `mtr`, firewall, traffic inspection](14-days/day-06-networking-tcpdump-firewalls-nat.md) | Earn Trust |
+| 7 | [Scripting & log parsing — Python, regex, Bash idioms (the live-coding question)](14-days/day-07-scripting-log-parsing.md) | Deliver Results |
 
 ## Week 2 — Performance, Advanced, Behavioral
 
-| Day | Date | Focus | LP Story |
-|---|---|---|---|
-| 8 | Performance analysis — `vmstat`, `iostat`, `sar`, USE method, PCP | Are Right, A Lot |
-| 9 | Memory tuning — hugepages, swappiness, NUMA, OOM, overcommit | Learn and Be Curious |
-| 10 | Disk/network tuning — I/O schedulers, BDP, buffer sizing | Invent and Simplify |
-| 11 | App debugging — `strace`, `gdb`, `valgrind`, `perf`, eBPF/bcc | Think Big |
-| 12 | Security & packages — SELinux, PAM, LDAP/Kerberos, dnf/RPM recovery | Have Backbone; Disagree and Commit |
-| 13 | Behavioral intensive — STAR for remaining LPs, mock loop | (covers Frugality, Hire/Develop, Earth's Best Employer, Success and Scale) |
-| 14 | Light review + rest — drills, no new material, sleep early | Final mock + rest |
+| Day | Topic | LP Story |
+|---|---|---|
+| 8 | [Performance analysis — `vmstat`, `iostat`, `sar`, USE method, PCP](14-days/day-08-performance-analysis-use-method.md) | Are Right, A Lot |
+| 9 | [Memory tuning — hugepages, swappiness, NUMA, OOM, overcommit](14-days/day-09-memory-tuning.md) | Learn and Be Curious |
+| 10 | [Disk/network tuning — I/O schedulers, BDP, buffer sizing](14-days/day-10-disk-network-tuning.md) | Invent and Simplify |
+| 11 | [App debugging — `strace`, `gdb`, `valgrind`, `perf`, eBPF/bcc](14-days/day-11-app-debugging.md) | Think Big |
+| 12 | Security & packages — SELinux, PAM, LDAP/Kerberos, dnf/RPM recovery _(notes pending)_ | Have Backbone; Disagree and Commit |
+| 13 | Behavioral intensive — STAR for remaining LPs, mock loop _(notes pending)_ | Frugality, Hire/Develop, Earth's Best Employer, Success and Scale |
+| 14 | Light review + rest — drills, no new material, sleep early _(notes pending)_ | Final mock + rest |
+
+---
+
+## Repository layout
+
+```
+.
+├── README.md                # this file
+├── LICENSE
+└── 14-days/
+    ├── day-01-linux-fundamentals.md
+    ├── day-02-processes-proc-signals.md
+    ├── day-03-filesystems-lvm-luks-iscsi.md
+    ├── day-04-boot-grub-systemd.md
+    ├── day-05-networking-tcp-dns-dhcp.md
+    ├── day-06-networking-tcpdump-firewalls-nat.md
+    ├── day-07-scripting-log-parsing.md
+    ├── day-08-performance-analysis-use-method.md
+    ├── day-09-memory-tuning.md
+    ├── day-10-disk-network-tuning.md
+    └── day-11-app-debugging.md
+```
 
 ---
 
@@ -86,6 +109,6 @@ By Day 13 you should have ~12–15 stories tagged to LPs, with at least one stro
 - [ ] "What happens when I load a website" walked end-to-end without notes
 - [ ] USE method opener memorized
 - [ ] `rd.break` root recovery procedure memorized
-- [ ] LVM recovery procedure (vgcfgrestore) memorized
+- [ ] LVM recovery procedure (`vgcfgrestore`) memorized
 - [ ] BPF filter syntax for the common cases (`tcp[tcpflags]`, `not port 22`, etc.)
 - [ ] Live-coding log-parsing solution rehearsed end-to-end
