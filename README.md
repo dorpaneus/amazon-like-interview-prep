@@ -37,9 +37,9 @@ Each topic block follows: **Context → Mental model → Tool walkthrough → Ha
 | 9 | [Memory tuning — hugepages, swappiness, NUMA, OOM, overcommit](14-days/day-09-memory-tuning.md) | Learn and Be Curious |
 | 10 | [Disk/network tuning — I/O schedulers, BDP, buffer sizing](14-days/day-10-disk-network-tuning.md) | Invent and Simplify |
 | 11 | [App debugging — `strace`, `gdb`, `valgrind`, `perf`, eBPF/bcc](14-days/day-11-app-debugging.md) | Think Big |
-| 12 | Security & packages — SELinux, PAM, LDAP/Kerberos, dnf/RPM recovery _(notes pending)_ | Have Backbone; Disagree and Commit |
-| 13 | Behavioral intensive — STAR for remaining LPs, mock loop _(notes pending)_ | Frugality, Hire/Develop, Earth's Best Employer, Success and Scale |
-| 14 | Light review + rest — drills, no new material, sleep early _(notes pending)_ | Final mock + rest |
+| 12 | [Security & packages — SELinux, PAM, LDAP/Kerberos, dnf/RPM recovery](14-days/day-12-app-debugging.md) | Have Backbone; Disagree and Commit |
+| 13 | [Behavioral intensive — STAR for remaining LPs, mock loop](14-days/day-13-app-debugging.md) | Frugality, Hire/Develop, Earth's Best Employer, Success and Scale |
+| 14 | [Light review + rest — drills, no new material, sleep early]((14-days/day-14-app-debugging.md))  | Final mock + rest |
 
 ---
 
