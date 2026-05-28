@@ -210,7 +210,8 @@ Answer out loud as if interviewing. Force structure — not "uh, the thing in co
 7. What perms does `umask 0027` give to new files and new dirs?
 8. Where is a file's creation time on ext4?
 
-**Answers**
+<details>
+<summary><strong>Answers</strong> (click to reveal)</summary>
 
 1. Type+perms / hard-link count / owner / group / size / mtime / name. Mention special bits if visible.
 2. **Symlink required**: across filesystems, or pointing to a directory. **Hard link required**: when the link must survive the original being renamed, moved, or deleted.
@@ -220,6 +221,8 @@ Answer out loud as if interviewing. Force structure — not "uh, the thing in co
 6. The directory itself, plus `.`, plus every subdirectory's `..`. Count = `2 + N_subdirs`.
 7. Files `640` (rw-r-----), dirs `750` (rwxr-x---).
 8. Not in standard `stat`. ext4 stores it as `crtime` but POSIX `stat()` doesn't expose it — use `statx()` or `debugfs -R 'stat <inode>' /dev/sdX`.
+
+</details>
 
 ### Behavioral (45 min) — Story #1: Ownership
 
