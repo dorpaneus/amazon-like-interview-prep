@@ -137,7 +137,7 @@ systemd is **PID 1** + a unit-based service manager. The mental model: every ser
 **The commands you must own**:
 
 ```bash
-systemctl status sshd
+"systemctl status sshd"
 systemctl start|stop|restart|reload sshd
 systemctl enable sshd          # create symlinks for boot startup
 systemctl disable sshd
