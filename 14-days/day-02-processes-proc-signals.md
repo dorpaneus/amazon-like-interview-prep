@@ -260,6 +260,7 @@ If `vmstat`'s `r` column is consistently larger than your CPU count → CPU-boun
 9. A process count for `ps` shows hundreds of `<defunct>` entries. What's wrong?
 10. Load average is 12.0 on a 4-core box. Is that bad?
 
+<details>
 <summary><strong>Answers</strong></summary>
 
 1. `/proc/stat` (system CPU totals) and `/proc/[pid]/stat` for each process. Computes deltas across intervals. Memory from `/proc/meminfo`.
@@ -272,6 +273,8 @@ If `vmstat`'s `r` column is consistently larger than your CPU count → CPU-boun
 8. `sudo lsof | grep deleted`, find PID, restart it (or signal it to reopen its log).
 9. Parent process isn't reaping children — bug in the parent. Restart the parent. Zombies hold a PID slot but no other resources.
 10. Depends on what's contributing. Load = average run-queue length + processes in D state. On 4 cores, 12.0 means roughly 3 processes-worth of demand per core — could be CPU-bound work, could be lots of D-state I/O waiters. Look at `top`/`vmstat` to decide.
+
+</details>
 
 ### Behavioral (45 min) — Story #2: Dive Deep
 
