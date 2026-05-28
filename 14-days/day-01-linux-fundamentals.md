@@ -35,7 +35,7 @@ The "file" you see is just a name. The actual file is the inode. This is why:
 
 A single long-listing line packs **seven fields**, space-separated. Take this example:
 
-```
+```text
 -rw-r--r--   1   alice   staff   4096   May 28 10:30   notes.txt
 ```
 
@@ -61,7 +61,7 @@ Octal cheat: `r=4, w=2, x=1`. So `755 = rwxr-xr-x`, `644 = rw-r--r--`, `600 = rw
 - **setgid (2xxx)** on file → runs as the file's *group*. On a directory → new files inherit the directory's group (useful for shared workspaces).
 - **sticky (1xxx)** on directory → only the file's owner can delete files in it. That's why `/tmp` is `drwxrwxrwt`.
 
-```
+```text
 -rwsr-xr-x  /usr/bin/passwd       ← setuid
 drwxrwsr-x  /shared               ← setgid on dir
 drwxrwxrwt  /tmp                  ← sticky (the t)
@@ -100,7 +100,7 @@ The goal isn't to type commands. It's to **predict the outcome before pressing E
 
 ### Lab 1: Decode `ls -l` field by field (30 min)
 
-```
+```bash
 mkdir ~/day1 && cd ~/day1
 touch foo.txt
 mkdir bar
@@ -118,7 +118,7 @@ ls -li        # -i adds inode number as first column
 
 ### Lab 2: Permissions & special bits (45 min)
 
-```
+```bash
 ls -l /usr/bin/passwd          # observe the s
 
 # umask experiment
@@ -145,7 +145,7 @@ Why doesn't `cp` preserve setuid by default? Security — copying a setuid binar
 
 ### Lab 3: Links and deletion — including the FD trick (45 min)
 
-```
+```bash
 echo "original content" > original.txt
 ln original.txt hard.txt
 ln -s original.txt soft.txt
@@ -158,7 +158,7 @@ ls -l soft.txt  # what does it look like?
 
 Now the **"disk full but I deleted the file"** classic. Open two terminals:
 
-```
+```bash
 # Terminal 1
 echo "data" > big.txt
 tail -f big.txt    # leave running, holds an FD
@@ -177,7 +177,7 @@ This is THE answer when an interviewer says "disk is full but I deleted the big 
 
 ### Lab 4: Timestamps (30 min)
 
-```
+```bash
 touch t.txt
 stat t.txt
 
