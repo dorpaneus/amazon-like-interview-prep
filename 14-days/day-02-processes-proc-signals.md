@@ -109,7 +109,7 @@ Signals are how the kernel and processes communicate asynchronously. Memorize th
 
 ### Lab 1: Walk the columns of `ps` and `top` (45 min)
 
-```
+```bash
 ps aux | head
 ```
 
@@ -129,7 +129,7 @@ Each column:
 
 **The VSZ vs RSS distinction matters**: VSZ is "address space mapped" — a process can mmap a 100 GB file and have huge VSZ but tiny RSS. RSS is what's actually costing you RAM right now. For "is this process leaking memory?" → **watch RSS over time**.
 
-```
+```bash
 top
 ```
 
@@ -156,7 +156,7 @@ The header lines decode as:
 
 ### Lab 2: Hand-parse `/proc` (45 min)
 
-```
+```bash
 # Pick a long-running process
 pgrep -f sshd | head -1
 PID=$(pgrep -f sshd | head -1)
@@ -176,7 +176,7 @@ cat /proc/$PID/stat
 
 **Now reproduce a `ps` field by hand**:
 
-```
+```bash
 # RSS for the process, in MB
 awk '{print $24 * 4 / 1024 " MB"}' /proc/$PID/stat
 # (multiply by page size, here 4096 bytes; verify with: getconf PAGESIZE)
@@ -190,7 +190,7 @@ The numbers should match. You just did what `ps` does.
 
 Two terminals.
 
-```
+```bash
 # Terminal 1
 sleep 600
 
@@ -206,7 +206,7 @@ kill -SIGTERM $(pgrep sleep)    # polite
 
 **Now a process that ignores SIGTERM**:
 
-```
+```bash
 # Terminal 1
 trap 'echo "ignoring TERM"' TERM
 sleep 600 &
@@ -224,7 +224,7 @@ pgrep -f "sleep 600"            # find the wait or sleep
 
 This is the realistic interview scenario: "the box is slow, what do you check?"
 
-```
+```bash
 # Top by CPU
 top                             # then press P
 # Top by memory
@@ -260,8 +260,7 @@ If `vmstat`'s `r` column is consistently larger than your CPU count → CPU-boun
 9. A process count for `ps` shows hundreds of `<defunct>` entries. What's wrong?
 10. Load average is 12.0 on a 4-core box. Is that bad?
 
-<details>
-<summary><strong>Answers</strong></summary>
+**Answers**
 
 1. `/proc/stat` (system CPU totals) and `/proc/[pid]/stat` for each process. Computes deltas across intervals. Memory from `/proc/meminfo`.
 2. **VSZ** = virtual address space mapped (includes shared libs, mmap'd files, unused stack/heap). **RSS** = resident in physical RAM. RSS is what costs you. Watch RSS, not VSZ, for leaks.
@@ -273,8 +272,6 @@ If `vmstat`'s `r` column is consistently larger than your CPU count → CPU-boun
 8. `sudo lsof | grep deleted`, find PID, restart it (or signal it to reopen its log).
 9. Parent process isn't reaping children — bug in the parent. Restart the parent. Zombies hold a PID slot but no other resources.
 10. Depends on what's contributing. Load = average run-queue length + processes in D state. On 4 cores, 12.0 means roughly 3 processes-worth of demand per core — could be CPU-bound work, could be lots of D-state I/O waiters. Look at `top`/`vmstat` to decide.
-
-</details>
 
 ### Behavioral (45 min) — Story #2: Dive Deep
 
