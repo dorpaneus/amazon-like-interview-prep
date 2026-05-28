@@ -1,10 +1,16 @@
-# Day 1 - Linux Fundamentals
+# 🐧 Day 1 - Linux Fundamentals
 
-The interview will pull on these threads constantly: "disk full but `df` says space available" → inode exhaustion. "I deleted the file but disk is still full" → open FD holding the inode. "Hardlink survives the original being deleted, why?" → because the original was never special. Today builds the mental model that makes those answers automatic.
+> [!NOTE]  
+> **The Goal:** The interview will pull on these threads constantly: 
+> * "Disk full but `df` says space available" → **inode exhaustion**. 
+> * "I deleted the file but disk is still full" → **open FD holding the inode**. 
+> * "Hardlink survives the original being deleted, why?" → **because the original was never special**. 
+> 
+> Today builds the mental model that makes those answers automatic.
 
 ---
 
-## Morning Block (1h) — The Unix file model
+## 🧠 Morning Block (1h) — The Unix file model
 
 ### 1A. Everything is a file
 
@@ -35,21 +41,20 @@ The "file" you see is just a name. The actual file is the inode. This is why:
 
 A single long-listing line packs **seven fields**, space-separated. Take this example:
 
-```text
--rw-r--r--   1   alice   staff   4096   May 28 10:30   notes.txt
-```
+`-rw-r--r--   1   alice   staff   4096   May 28 10:30   notes.txt`
 
 | # | Example        | Field                         | What it means |
 | - | -------------- | ----------------------------- | ------------- |
-| 1 | `-rw-r--r--`   | **File type + permissions**   | The *first* character is the file type (`-` file, `d` dir, `l` symlink, … — see the table above). The next 9 characters are three permission triads — **owner**, **group**, **other** — each `rwx` (read / write / execute). A trailing `.` means an SELinux context is present; a trailing `+` means a POSIX ACL is set. |
-| 2 | `1`            | **Hard-link count**           | How many directory entries (names) point at this inode. Regular files start at 1; directories start at 2 and gain 1 for every subdirectory, because each subdir's `..` links back to the parent. |
-| 3 | `alice`        | **Owner (user)**             | The user that owns the inode. This is who the *first* permission triad applies to, and what a setuid binary runs as. |
-| 4 | `staff`        | **Group**                     | The owning group — who the *middle* permission triad applies to. (`ls -ln` shows the numeric UID/GID instead of names.) |
-| 5 | `4096`         | **Size**                      | Size in **bytes** by default (`ls -lh` makes it human-readable). For a directory this is the size of its entry table, not the contents within. For a device file you'll see `major, minor` numbers here instead of a byte count. |
-| 6 | `May 28 10:30` | **Modification time (mtime)** | When the file's *data* last changed. `ls -lc` shows ctime (inode change), `ls -lu` shows atime (access), and `ls -l --full-time` shows full timestamp precision. |
-| 7 | `notes.txt`    | **Name**                      | The filename — i.e. the directory entry itself. For a symlink, `ls -l` appends `-> target` showing where it points. |
+| 1 | `-rw-r--r--`   | **File type + permissions** | The *first* character is the file type (`-` file, `d` dir, `l` symlink, …). The next 9 characters are three permission triads — **owner**, **group**, **other** — each `rwx`. A trailing `.` means an SELinux context is present; a trailing `+` means a POSIX ACL is set. |
+| 2 | `1`            | **Hard-link count** | How many directory entries (names) point at this inode. Regular files start at 1; directories start at 2 and gain 1 for every subdirectory, because each subdir's `..` links back to the parent. |
+| 3 | `alice`        | **Owner (user)** | The user that owns the inode. This is who the *first* permission triad applies to, and what a setuid binary runs as. |
+| 4 | `staff`        | **Group** | The owning group — who the *middle* permission triad applies to. (`ls -ln` shows the numeric UID/GID instead of names.) |
+| 5 | `4096`         | **Size** | Size in **bytes** by default (`ls -lh` makes it human-readable). For a directory this is the size of its entry table, not the contents within. For a device file you'll see `major, minor` numbers here instead of a byte count. |
+| 6 | `May 28 10:30` | **Modification time (mtime)** | When the file's *data* last changed. `ls -lc` shows ctime (inode change), `ls -lu` shows atime (access), and `ls -l --full-time` shows full precision. |
+| 7 | `notes.txt`    | **Name** | The filename — i.e. the directory entry itself. For a symlink, `ls -l` appends `-> target` showing where it points. |
 
-Quick way to remember the order: **perms → links → owner → group → size → time → name.**
+> [!TIP]
+> **Quick way to remember the order:** > perms → links → owner → group → size → time → name.
 
 ### 1B. Permissions deep (1h 15min)
 
@@ -69,7 +74,7 @@ drwxrwxrwt  /tmp                  ← sticky (the t)
 
 Lowercase `s/t` means the underlying execute bit *is* set. Uppercase `S/T` means it isn't (usually a bug).
 
-**umask** is subtractive at file creation. Default `0022` → files `666-022=644`, dirs `777-022=755`. With `umask 0027`: files `640`, dirs `750`.
+**umask** acts as a filter that *turns off* permissions at file creation (it is a bitwise mask, not simple subtraction). Default `0022` strips write access from group and others → new files get `644` (`rw-r--r--`), dirs `755` (`rwxr-xr-x`). With `umask 0027`, it strips write from group, and all access from others → files get `640` (`rw-r-----`), dirs `750` (`rwxr-x---`).
 
 ### 1C. Hard vs symbolic links (1h)
 
@@ -84,19 +89,19 @@ For files: 1 by default. For directories: at least 2 — the directory itself, p
 - `readlink linkname` — show the target string
 - `stat linkname` vs `stat -L linkname` — without `-L`, you stat the symlink itself; with `-L`, you follow it
 
-**Timestamps trap**:
-
-- **atime** — last access (read). Often disabled with `noatime` mount option.
-- **mtime** — last modification of *data*. What `ls -l` shows.
-- **ctime** — last change of *inode metadata* (perms, owner, size, link count). **NOT creation time.**
+> [!CAUTION]
+> **Timestamps trap:**
+> - **atime** — last access (read). Often disabled with `noatime` mount option.
+> - **mtime** — last modification of *data*. What `ls -l` shows.
+> - **ctime** — last change of *inode metadata* (perms, owner, size, link count). **NOT creation time.**
 
 ext4 has `crtime` (creation) in the inode, but POSIX `stat()` doesn't expose it — you need `statx()` or `debugfs -R 'stat <inode>'`.
 
 ---
 
-## Midday Block (2.5h) — Hands-on labs
+## 💻 Midday Block (2.5h) — Hands-on labs
 
-The goal isn't to type commands. It's to **predict the outcome before pressing Enter**, then verify.
+The goal isn't to type commands. It's to **predict the outcome before pressing <kbd>Enter</kbd>**, then verify.
 
 ### Lab 1: Decode `ls -l` field by field (30 min)
 
@@ -109,12 +114,12 @@ ln -s foo.txt foo-soft.txt
 ls -li        # -i adds inode number as first column
 ```
 
-**Predict, then check**:
-
-- Same inode for `foo.txt` and `foo-hard.txt`? (Yes — same inode, that's what hard link means.)
-- Link count on `foo.txt` after the hard link? (2)
-- Inode of the symlink — same as `foo.txt`? (No, symlink has its own inode.)
-- Compare `stat foo-soft.txt` vs `stat -L foo-soft.txt`. The first describes the link itself; the second describes what it points to.
+> [!NOTE]
+> **Predict, then check:**
+> - Same inode for `foo.txt` and `foo-hard.txt`? (Yes — same inode, that's what hard link means.)
+> - Link count on `foo.txt` after the hard link? (2)
+> - Inode of the symlink — same as `foo.txt`? (No, symlink has its own inode.)
+> - Compare `stat foo-soft.txt` vs `stat -L foo-soft.txt`. The first describes the link itself; the second describes what it points to.
 
 ### Lab 2: Permissions & special bits (45 min)
 
@@ -141,7 +146,8 @@ mkdir /tmp/scratch && chmod 1777 /tmp/scratch
 ls -ld /tmp/scratch
 ```
 
-Why doesn't `cp` preserve setuid by default? Security — copying a setuid binary owned by root would let anyone create a privilege-escalation tool. Use `cp -p` to preserve mode.
+> [!WARNING]
+> Why doesn't `cp` preserve setuid by default? **Security** — copying a setuid binary owned by root would let anyone create a privilege-escalation tool. Use `cp -p` to preserve mode.
 
 ### Lab 3: Links and deletion — including the FD trick (45 min)
 
@@ -156,7 +162,7 @@ cat soft.txt    # broken — why?
 ls -l soft.txt  # what does it look like?
 ```
 
-Now the **"disk full but I deleted the file"** classic. Open two terminals:
+Now for the classic interview scenario. Open two terminals:
 
 ```bash
 # Terminal 1
@@ -167,13 +173,20 @@ tail -f big.txt    # leave running, holds an FD
 rm big.txt
 ls big.txt         # gone
 df -h .            # space NOT freed
-lsof | grep big.txt    # still held open!
-sudo lsof | grep deleted   # the canonical "find leaked space" command
-# Now Ctrl-C the tail in Terminal 1
-df -h .            # space freed
 ```
 
-This is THE answer when an interviewer says "disk is full but I deleted the big log, `df` still shows full." Look for `lsof | grep deleted`, find the process, restart or kill it.
+> [!TIP]
+> **The Interview Answer:**
+> When an interviewer says "disk is full but I deleted the big log," the answer is almost always an open File Descriptor (FD) holding the inode. 
+
+Find the leaked space using this command:
+
+```bash
+# The canonical flag to find open files with 0 link count (deleted)
+sudo lsof +L1          
+```
+
+Finally, press <kbd>Ctrl</kbd> + <kbd>C</kbd> in Terminal 1 to kill the tail process. Run `df -h .` again and verify the space is freed!
 
 ### Lab 4: Timestamps (30 min)
 
@@ -195,7 +208,7 @@ Predict which of atime/mtime/ctime changes before each command.
 
 ---
 
-## Afternoon Block (1.5h) — Drills + first LP
+## 🎯 Afternoon Block (1.5h) — Drills + first LP
 
 ### Self-check (45 min)
 
@@ -216,7 +229,7 @@ Answer out loud as if interviewing. Force structure — not "uh, the thing in co
 1. Type+perms / hard-link count / owner / group / size / mtime / name. Mention special bits if visible.
 2. **Symlink required**: across filesystems, or pointing to a directory. **Hard link required**: when the link must survive the original being renamed, moved, or deleted.
 3. mtime = file *data* changed. ctime = *inode metadata* changed (perms, owner, size, link count). Editing changes both; `chmod` changes only ctime.
-4. `sudo lsof | grep deleted` to find the process still holding the FD. Restart or kill it; space frees when the FD closes.
+4. Run `sudo lsof +L1` to find the process still holding the unlinked file descriptor. Restart or kill it; space frees when the FD closes.
 5. Setuid root. Anyone running it executes as root. If buggy → privilege escalation. Intentional on `passwd`/`sudo`; suspicious on anything user-writable.
 6. The directory itself, plus `.`, plus every subdirectory's `..`. Count = `2 + N_subdirs`.
 7. Files `640` (rw-r-----), dirs `750` (rwxr-x---).
@@ -224,7 +237,7 @@ Answer out loud as if interviewing. Force structure — not "uh, the thing in co
 
 </details>
 
-### Behavioral (45 min) — Story #1: Ownership
+### 🤝 Behavioral (45 min) — Story #1: Ownership
 
 Today's LP: **Ownership** (most-used LP for SRE/DevOps loops).
 
