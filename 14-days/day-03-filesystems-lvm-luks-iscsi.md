@@ -12,7 +12,7 @@ The objectives this hits: diagnose FS issues, recover corrupted filesystems, rec
 
 Stack from bottom up:
 
-```
+```text
 Physical disk / EBS volume / iSCSI LUN
         ↓
 Partition (optional — gpt/mbr)
