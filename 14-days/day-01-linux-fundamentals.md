@@ -37,6 +37,12 @@ The "file" you see is just a name. The actual file is the inode. This is why:
 | `p`  | named pipe (FIFO) |
 | `s`  | socket            |
 
+> [!IMPORTANT]
+> **☁️ The AWS Bridge: S3 vs. POSIX & EBS**
+> Interviewers love testing if you know where Linux file models end and Cloud storage begins.
+> * **EBS (Elastic Block Store):** This is a raw block device. When you format it with `ext4` or `xfs`, all the rules of inodes, hard links, and `df -h` apply perfectly. If an EBS volume runs out of inodes, the instance fails to write data even if AWS shows the volume has gigabytes of free space.
+> * **S3 (Simple Storage Service):** This is object storage, *not* a file system. S3 does not have inodes, directories, or traditional file permissions. "Directories" in S3 are just string prefixes in the object key (e.g., `folder/file.txt` is just one long name). You cannot hard link in S3.
+
 ### Anatomy of an `ls -l` line — column by column
 
 A single long-listing line packs **seven fields**, space-separated. Take this example:
