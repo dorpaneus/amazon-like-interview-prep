@@ -261,6 +261,7 @@ If `vmstat`'s `r` column is consistently larger than your CPU count → CPU-boun
 10. Load average is 12.0 on a 4-core box. Is that bad?
 
 **Answers**
+<summary><strong>Answers</strong></summary>
 
 1. `/proc/stat` (system CPU totals) and `/proc/[pid]/stat` for each process. Computes deltas across intervals. Memory from `/proc/meminfo`.
 2. **VSZ** = virtual address space mapped (includes shared libs, mmap'd files, unused stack/heap). **RSS** = resident in physical RAM. RSS is what costs you. Watch RSS, not VSZ, for leaks.
