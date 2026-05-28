@@ -17,11 +17,11 @@ Key concepts:
 - **PID 1** — `init` or `systemd`. Started by the kernel; adopts orphans; reaping it crashes the system.
 - **Parent / child** — every process except PID 1 has a parent. `fork()` creates a copy; `exec()` replaces the program. Shell command execution = fork + exec.
 - **Process states** (`ps` STAT column):
-  - `R` — running or runnable (on a CPU or in run queue)
-  - `S` — interruptible sleep (most common; waiting on something)
-  - `D` — uninterruptible sleep (waiting on I/O or kernel; **can't be killed**, even with SIGKILL)
-  - `T` — stopped (SIGSTOP / Ctrl-Z)
-  - `Z` — zombie (exited, parent hasn't called `wait()` to reap it)
+  * `R` — running or runnable (on a CPU or in run queue)
+  * `S` — interruptible sleep (most common; waiting on something)
+  * `D` — uninterruptible sleep (waiting on I/O or kernel; **can't be killed**, even with SIGKILL)
+  * `T` — stopped (SIGSTOP / Ctrl-Z)
+  * `Z` — zombie (exited, parent hasn't called `wait()` to reap it)
 - **Process groups & sessions** — for job control and signal delivery to terminal-attached processes.
 - **Threads** — share the same memory and FDs but each has its own kernel scheduling entity (PID inside the kernel; what userspace calls TID).
 
@@ -33,18 +33,18 @@ Key concepts:
 
 Signals are how the kernel and processes communicate asynchronously. Memorize these — they come up:
 
-| Signal | Number | What it does | Catchable? |
-|---|---|---|---|
-| `SIGHUP` | 1 | Hangup / reload config (by convention) | Yes |
-| `SIGINT` | 2 | Ctrl-C, polite interrupt | Yes |
-| `SIGQUIT` | 3 | Ctrl-\, quit + core dump | Yes |
-| `SIGKILL` | 9 | Terminate immediately | **No** |
-| `SIGTERM` | 15 | Polite "please exit" — default for `kill` | Yes |
-| `SIGSTOP` | 19 | Pause | **No** |
-| `SIGCONT` | 18 | Resume after STOP | Yes |
-| `SIGUSR1`/`SIGUSR2` | 10/12 | App-defined | Yes |
-| `SIGSEGV` | 11 | Segfault — invalid memory access | Yes (rarely caught) |
-| `SIGPIPE` | 13 | Wrote to a closed pipe | Yes |
+| Signal              | Number | What it does                              | Catchable?          |
+| ------------------- | ------ | ----------------------------------------- | ------------------- |
+| `SIGHUP`            | 1      | Hangup / reload config (by convention)    | Yes                 |
+| `SIGINT`            | 2      | Ctrl-C, polite interrupt                  | Yes                 |
+| `SIGQUIT`           | 3      | Ctrl-, quit + core dump                   | Yes                 |
+| `SIGKILL`           | 9      | Terminate immediately                     | **No**              |
+| `SIGTERM`           | 15     | Polite "please exit" — default for `kill` | Yes                 |
+| `SIGSTOP`           | 19     | Pause                                     | **No**              |
+| `SIGCONT`           | 18     | Resume after STOP                         | Yes                 |
+| `SIGUSR1`/`SIGUSR2` | 10/12  | App-defined                               | Yes                 |
+| `SIGSEGV`           | 11     | Segfault — invalid memory access          | Yes (rarely caught) |
+| `SIGPIPE`           | 13     | Wrote to a closed pipe                    | Yes                 |
 
 **Rules**:
 
@@ -60,38 +60,40 @@ Signals are how the kernel and processes communicate asynchronously. Memorize th
 
 **Per-process — `/proc/[pid]/`**:
 
-| Path | What it contains |
-|---|---|
-| `cmdline` | null-separated argv |
-| `comm` | short process name (15 chars max) |
-| `cwd` | symlink to working directory |
-| `environ` | null-separated environment vars |
-| `exe` | symlink to the binary |
-| `fd/` | directory of open file descriptors (each a symlink) |
-| `io` | bytes read/written, syscalls |
-| `limits` | ulimits (RLIMIT_*) |
-| `maps` | memory mappings (also smaps for detail) |
-| `status` | human-readable summary (RSS, threads, state, UIDs) |
-| `stat` | machine-readable; what ps parses |
-| `sched` | scheduler stats |
-| `syscall` | currently-executing syscall (if any) |
-| `task/` | one subdir per thread |
+| Path      | What it contains                                    |
+| --------- | --------------------------------------------------- |
+| `cmdline` | null-separated argv                                 |
+| `comm`    | short process name (15 chars max)                   |
+| `cwd`     | symlink to working directory                        |
+| `environ` | null-separated environment vars                     |
+| `exe`     | symlink to the binary                               |
+| `fd/`     | directory of open file descriptors (each a symlink) |
+| `io`      | bytes read/written, syscalls                        |
+| `limits`  | ulimits (RLIMIT\_\*)                                |
+| `maps`    | memory mappings (also smaps for detail)             |
+| `status`  | human-readable summary (RSS, threads, state, UIDs)  |
+| `stat`    | machine-readable; what ps parses                    |
+| `sched`   | scheduler stats                                     |
+| `syscall` | currently-executing syscall (if any)                |
+| `task/`   | one subdir per thread                               |
+
+**`(deleted)` in `maps` is an ops signal, not a curiosity**: when a package upgrade replaces a shared library, processes that loaded the old one keep running it — `/proc/<pid>/maps` shows the path tagged `(deleted)`. This is the basis of the post-patch "reboot vs just restart the service" decision. See Day 4 §4E (and `lsof +c0 | grep DEL`) for the patching application.
 
 **System-wide — `/proc/`**:
 
-| Path | What it contains |
-|---|---|
-| `cpuinfo` | per-CPU model, flags, frequency |
-| `meminfo` | memory totals, free, buffers, cached, swap |
-| `loadavg` | 1/5/15 min run-queue length + nr_running/nr_total + last_pid |
-| `stat` | CPU time totals (user/nice/system/idle/iowait/irq/softirq/steal) |
-| `sys/` | tunables (same as sysctl) |
-| `net/` | networking state (tcp, udp, route, dev stats) |
-| `mounts` | currently mounted filesystems |
-| `modules` | loaded kernel modules |
-| `interrupts` | IRQ counts per CPU |
-| `diskstats` | block-device I/O stats (what iostat parses) |
-| `slabinfo` | kernel slab allocator stats (root only) |
+| Path         | What it contains                                                 |
+| ------------ | ---------------------------------------------------------------- |
+| `cpuinfo`    | per-CPU model, flags, frequency                                  |
+| `meminfo`    | memory totals, free, buffers, cached, swap                       |
+| `loadavg`    | 1/5/15 min run-queue length + nr\_running/nr\_total + last\_pid  |
+| `stat`       | CPU time totals (user/nice/system/idle/iowait/irq/softirq/steal) |
+| `sys/`       | tunables (same as sysctl)                                        |
+| `net/`       | networking state (tcp, udp, route, dev stats)                    |
+| `mounts`     | currently mounted filesystems                                    |
+| `modules`    | loaded kernel modules                                            |
+| `interrupts` | IRQ counts per CPU                                               |
+| `diskstats`  | block-device I/O stats (what iostat parses)                      |
+| `slabinfo`   | kernel slab allocator stats (root only)                          |
 
 **`top` reads `/proc/stat` and `/proc/[pid]/stat`** at intervals, computes deltas. CPU% is *always* computed over an interval — that's why the first sample of `top` shows weird values.
 
@@ -107,7 +109,7 @@ Signals are how the kernel and processes communicate asynchronously. Memorize th
 
 ### Lab 1: Walk the columns of `ps` and `top` (45 min)
 
-```bash
+```
 ps aux | head
 ```
 
@@ -127,7 +129,7 @@ Each column:
 
 **The VSZ vs RSS distinction matters**: VSZ is "address space mapped" — a process can mmap a 100 GB file and have huge VSZ but tiny RSS. RSS is what's actually costing you RAM right now. For "is this process leaking memory?" → **watch RSS over time**.
 
-```bash
+```
 top
 ```
 
@@ -154,7 +156,7 @@ The header lines decode as:
 
 ### Lab 2: Hand-parse `/proc` (45 min)
 
-```bash
+```
 # Pick a long-running process
 pgrep -f sshd | head -1
 PID=$(pgrep -f sshd | head -1)
@@ -174,7 +176,7 @@ cat /proc/$PID/stat
 
 **Now reproduce a `ps` field by hand**:
 
-```bash
+```
 # RSS for the process, in MB
 awk '{print $24 * 4 / 1024 " MB"}' /proc/$PID/stat
 # (multiply by page size, here 4096 bytes; verify with: getconf PAGESIZE)
@@ -188,7 +190,7 @@ The numbers should match. You just did what `ps` does.
 
 Two terminals.
 
-```bash
+```
 # Terminal 1
 sleep 600
 
@@ -204,7 +206,7 @@ kill -SIGTERM $(pgrep sleep)    # polite
 
 **Now a process that ignores SIGTERM**:
 
-```bash
+```
 # Terminal 1
 trap 'echo "ignoring TERM"' TERM
 sleep 600 &
@@ -222,7 +224,7 @@ pgrep -f "sleep 600"            # find the wait or sleep
 
 This is the realistic interview scenario: "the box is slow, what do you check?"
 
-```bash
+```
 # Top by CPU
 top                             # then press P
 # Top by memory
@@ -258,8 +260,7 @@ If `vmstat`'s `r` column is consistently larger than your CPU count → CPU-boun
 9. A process count for `ps` shows hundreds of `<defunct>` entries. What's wrong?
 10. Load average is 12.0 on a 4-core box. Is that bad?
 
-<details>
-<summary>Answers</summary>
+**Answers**
 
 1. `/proc/stat` (system CPU totals) and `/proc/[pid]/stat` for each process. Computes deltas across intervals. Memory from `/proc/meminfo`.
 2. **VSZ** = virtual address space mapped (includes shared libs, mmap'd files, unused stack/heap). **RSS** = resident in physical RAM. RSS is what costs you. Watch RSS, not VSZ, for leaks.
@@ -271,8 +272,6 @@ If `vmstat`'s `r` column is consistently larger than your CPU count → CPU-boun
 8. `sudo lsof | grep deleted`, find PID, restart it (or signal it to reopen its log).
 9. Parent process isn't reaping children — bug in the parent. Restart the parent. Zombies hold a PID slot but no other resources.
 10. Depends on what's contributing. Load = average run-queue length + processes in D state. On 4 cores, 12.0 means roughly 3 processes-worth of demand per core — could be CPU-bound work, could be lots of D-state I/O waiters. Look at `top`/`vmstat` to decide.
-
-</details>
 
 ### Behavioral (45 min) — Story #2: Dive Deep
 
