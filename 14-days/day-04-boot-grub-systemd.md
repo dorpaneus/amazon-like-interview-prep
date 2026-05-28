@@ -42,7 +42,7 @@ End-to-end:
 
 - `/boot/grub2/grub.cfg` (BIOS) or `/boot/efi/EFI/<distro>/grub.cfg` (UEFI) — the generated file. **Don't edit by hand**; regenerate with:
 
-```
+```bash
 grub2-mkconfig -o /boot/grub2/grub.cfg                 # BIOS
 grub2-mkconfig -o /boot/efi/EFI/redhat/grub.cfg        # UEFI on RHEL
 ```
@@ -62,7 +62,7 @@ grub2-mkconfig -o /boot/efi/EFI/redhat/grub.cfg        # UEFI on RHEL
 
 **GRUB rescue prompt** (`grub rescue>`) — appears when GRUB can't find its modules. Extreme minimal shell. From here:
 
-```
+```text
 grub rescue> ls                                    # see partitions: (hd0,gpt2) etc
 grub rescue> set prefix=(hd0,gpt2)/boot/grub2
 grub rescue> set root=(hd0,gpt2)
@@ -84,7 +84,7 @@ This is **the** boot-recovery interview question. Multiple methods; know `rd.bre
 
 4. Real root is mounted at `/sysroot`, **read-only**. Remount it:
 
-```
+```bash
 mount -o remount,rw /sysroot
 chroot /sysroot
 passwd root
@@ -92,12 +92,12 @@ passwd root
 
 5. **Critical**: SELinux. With SELinux enforcing, the new `/etc/shadow` has the wrong context, and you'll be locked out again. Two options:
 
-```
+```bash
 touch /.autorelabel              # full relabel on next boot (slow, safe)
 ```
     Or, faster, relabel just the file you changed:
 
-```
+```bash
 load_policy -i
 chcon system_u:object_r:shadow_t:s0 /etc/shadow
 ```
@@ -136,7 +136,7 @@ systemd is **PID 1** + a unit-based service manager. The mental model: every ser
 
 **The commands you must own**:
 
-```
+```bash
 systemctl status sshd
 systemctl start|stop|restart|reload sshd
 systemctl enable sshd          # create symlinks for boot startup
@@ -160,7 +160,7 @@ systemctl daemon-reload        # after editing unit files
 
 **Boot analysis**:
 
-```
+```bash
 systemd-analyze                    # total boot time
 systemd-analyze blame              # services ranked by startup time
 systemd-analyze critical-chain     # the chain on the critical path of boot
@@ -170,7 +170,7 @@ systemd-analyze verify foo.service # syntax-check a unit
 
 **The journal** (systemd's logging — persistent if `/var/log/journal/` exists):
 
-```
+```bash
 journalctl                         # everything
 journalctl -b                      # this boot
 journalctl -b -1                   # previous boot
@@ -189,7 +189,7 @@ journalctl --vacuum-time=2weeks    # purge older
 
 After patching, the box keeps running the *old* kernel until it reboots. The universal, distro-agnostic check is to compare the running kernel against the newest one on disk:
 
-```
+```bash
 # Running kernel
 uname -r
 
@@ -206,7 +206,7 @@ If the version in `/boot` is newer than `uname -r`, a kernel reboot is pending.
 
 **The subtler half — reboot vs just restart a service**: a `glibc`/`openssl` upgrade rarely needs a full reboot; often you only need to restart the daemons still mapped to the *old* on-disk library:
 
-```
+```bash
 needrestart                 # interactive: services holding stale libs (Deb/RHEL)
 needs-restarting -s         # RHEL: list services needing restart
 lsof +c0 | grep -w DEL      # processes mapped to deleted (replaced) libraries
@@ -222,7 +222,7 @@ lsof +c0 | grep -w DEL      # processes mapped to deleted (replaced) libraries
 
 ### Lab 1: Map your boot (30 min)
 
-```
+```bash
 systemd-analyze
 systemd-analyze blame | head -20
 systemd-analyze critical-chain
@@ -243,7 +243,7 @@ journalctl -b | head -100         # the early boot lines
 
 Create a real systemd service to internalize the unit format:
 
-```
+```bash
 # A trivial daemon
 sudo tee /usr/local/bin/heartbeat.sh >/dev/null <<'EOF'
 #!/bin/bash
@@ -281,7 +281,7 @@ sudo journalctl -u heartbeat -f       # Ctrl-C to stop following
 
 **Now break it** to see Restart kick in:
 
-```
+```bash
 sudo pkill -f heartbeat.sh
 sudo systemctl status heartbeat       # observe restart counter
 
@@ -295,7 +295,7 @@ sudo journalctl -u heartbeat | tail
 
 **Drop-in override** (the right way to customize):
 
-```
+```bash
 sudo systemctl edit heartbeat
 # In the editor, add:
 # [Service]
@@ -306,7 +306,7 @@ sudo systemctl cat heartbeat          # see the drop-in below the original
 
 Cleanup:
 
-```
+```bash
 sudo systemctl disable --now heartbeat
 sudo rm /etc/systemd/system/heartbeat.service
 sudo rm -rf /etc/systemd/system/heartbeat.service.d
@@ -318,7 +318,7 @@ sudo systemctl daemon-reload
 
 The classic boot-breaker. **Take a snapshot of your VM first.**
 
-```
+```bash
 sudo cp /etc/fstab /etc/fstab.bak
 
 # Add a non-existent device with default options
@@ -356,7 +356,7 @@ This is the headline lab. You're going to "lose" the root password and recover i
 
 5. You'll see `switch_root:/#`. Run:
 
-```
+```bash
 mount -o remount,rw /sysroot
 chroot /sysroot
 passwd root
@@ -373,7 +373,7 @@ exit
 
 ### Lab 5: Boot to emergency vs rescue, manually (20 min)
 
-```
+```bash
 # Switch to rescue from a running system (will drop you to a single-user prompt)
 sudo systemctl rescue                  # similar to runlevel 1
 # To return:
@@ -390,7 +390,7 @@ sudo systemctl emergency               # only / mounted ro, nothing else
 
 **Snapshot the VM first.** The goal is to make "pending reboot" a state you can *see*, three different ways.
 
-```
+```bash
 # Before: record the running kernel
 uname -r
 
@@ -439,8 +439,7 @@ uname -r
 13. After a `dnf update`, how do you tell whether the box needs a full reboot versus just a service restart?
 14. A security CVE is in the kernel but the service can't take downtime now. What are your options?
 
-<details>
-<summary><strong>Answers</strong></summary>
+**Answers**
 
 1. Firmware (BIOS/UEFI) → bootloader (GRUB2) loads kernel + initramfs → kernel inits, mounts initramfs → initramfs loads storage drivers, mounts real `/` → `switch_root` to real root → exec `/sbin/init` (systemd, PID 1) → systemd reads `default.target` and brings up dependencies → target reached → login prompt.
 2. A small in-memory filesystem with just enough modules and tools to find and mount the real root filesystem. Needed because the kernel doesn't have built-in drivers for every storage controller, LVM, LUKS, multipath, NFS root, etc. Built by `dracut`.
@@ -456,8 +455,6 @@ uname -r
 12. `After=network-online.target nss-lookup.target` and `Wants=network-online.target`. `network-online.target` is "real" connectivity, not just "the network service started." `Wants` is a soft dependency that pulls the target in; `Requires` would fail your unit if the target failed.
 13. Compare running vs installed kernel (`uname -r` vs newest `/boot/vmlinuz-*`), or use the distro signal: `/var/run/reboot-required` on Debian/Ubuntu, `needs-restarting -r` on RHEL. For libraries (not the kernel), `needrestart` / `needs-restarting -s` / `lsof +c0 | grep DEL` show which *processes* hold deleted libs — restart just those instead of rebooting.
 14. Live patch the running kernel (`kpatch`/`canonical-livepatch`/Ksplice) to close the CVE now, then schedule the real reboot for a maintenance window. For a fleet, orchestrate rolling reboots behind a load balancer so capacity stays up.
-
-</details>
 
 ### Behavioral (45 min) — Story #4: Bias for Action
 
