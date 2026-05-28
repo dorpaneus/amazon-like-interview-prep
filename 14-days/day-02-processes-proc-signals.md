@@ -260,7 +260,6 @@ If `vmstat`'s `r` column is consistently larger than your CPU count → CPU-boun
 9. A process count for `ps` shows hundreds of `<defunct>` entries. What's wrong?
 10. Load average is 12.0 on a 4-core box. Is that bad?
 
-**Answers**
 <summary><strong>Answers</strong></summary>
 
 1. `/proc/stat` (system CPU totals) and `/proc/[pid]/stat` for each process. Computes deltas across intervals. Memory from `/proc/meminfo`.
