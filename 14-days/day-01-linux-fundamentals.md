@@ -21,15 +21,35 @@ The "file" you see is just a name. The actual file is the inode. This is why:
 
 **File types** (first char in `ls -l`):
 
-| Char | Type |
-|---|---|
-| `-` | regular file |
-| `d` | directory |
-| `l` | symbolic link |
-| `b` | block device |
-| `c` | character device |
-| `p` | named pipe (FIFO) |
-| `s` | socket |
+| Char | Type              |
+| ---- | ----------------- |
+| `-`  | regular file      |
+| `d`  | directory         |
+| `l`  | symbolic link     |
+| `b`  | block device      |
+| `c`  | character device  |
+| `p`  | named pipe (FIFO) |
+| `s`  | socket            |
+
+### Anatomy of an `ls -l` line — column by column
+
+A single long-listing line packs **seven fields**, space-separated. Take this example:
+
+```
+-rw-r--r--   1   alice   staff   4096   May 28 10:30   notes.txt
+```
+
+| # | Example        | Field                         | What it means |
+| - | -------------- | ----------------------------- | ------------- |
+| 1 | `-rw-r--r--`   | **File type + permissions**   | The *first* character is the file type (`-` file, `d` dir, `l` symlink, … — see the table above). The next 9 characters are three permission triads — **owner**, **group**, **other** — each `rwx` (read / write / execute). A trailing `.` means an SELinux context is present; a trailing `+` means a POSIX ACL is set. |
+| 2 | `1`            | **Hard-link count**           | How many directory entries (names) point at this inode. Regular files start at 1; directories start at 2 and gain 1 for every subdirectory, because each subdir's `..` links back to the parent. |
+| 3 | `alice`        | **Owner (user)**             | The user that owns the inode. This is who the *first* permission triad applies to, and what a setuid binary runs as. |
+| 4 | `staff`        | **Group**                     | The owning group — who the *middle* permission triad applies to. (`ls -ln` shows the numeric UID/GID instead of names.) |
+| 5 | `4096`         | **Size**                      | Size in **bytes** by default (`ls -lh` makes it human-readable). For a directory this is the size of its entry table, not the contents within. For a device file you'll see `major, minor` numbers here instead of a byte count. |
+| 6 | `May 28 10:30` | **Modification time (mtime)** | When the file's *data* last changed. `ls -lc` shows ctime (inode change), `ls -lu` shows atime (access), and `ls -l --full-time` shows full timestamp precision. |
+| 7 | `notes.txt`    | **Name**                      | The filename — i.e. the directory entry itself. For a symlink, `ls -l` appends `-> target` showing where it points. |
+
+Quick way to remember the order: **perms → links → owner → group → size → time → name.**
 
 ### 1B. Permissions deep (1h 15min)
 
@@ -80,7 +100,7 @@ The goal isn't to type commands. It's to **predict the outcome before pressing E
 
 ### Lab 1: Decode `ls -l` field by field (30 min)
 
-```bash
+```
 mkdir ~/day1 && cd ~/day1
 touch foo.txt
 mkdir bar
@@ -98,7 +118,7 @@ ls -li        # -i adds inode number as first column
 
 ### Lab 2: Permissions & special bits (45 min)
 
-```bash
+```
 ls -l /usr/bin/passwd          # observe the s
 
 # umask experiment
@@ -125,7 +145,7 @@ Why doesn't `cp` preserve setuid by default? Security — copying a setuid binar
 
 ### Lab 3: Links and deletion — including the FD trick (45 min)
 
-```bash
+```
 echo "original content" > original.txt
 ln original.txt hard.txt
 ln -s original.txt soft.txt
@@ -138,7 +158,7 @@ ls -l soft.txt  # what does it look like?
 
 Now the **"disk full but I deleted the file"** classic. Open two terminals:
 
-```bash
+```
 # Terminal 1
 echo "data" > big.txt
 tail -f big.txt    # leave running, holds an FD
@@ -157,7 +177,7 @@ This is THE answer when an interviewer says "disk is full but I deleted the big 
 
 ### Lab 4: Timestamps (30 min)
 
-```bash
+```
 touch t.txt
 stat t.txt
 
@@ -190,8 +210,7 @@ Answer out loud as if interviewing. Force structure — not "uh, the thing in co
 7. What perms does `umask 0027` give to new files and new dirs?
 8. Where is a file's creation time on ext4?
 
-<details>
-<summary>Answers</summary>
+**Answers**
 
 1. Type+perms / hard-link count / owner / group / size / mtime / name. Mention special bits if visible.
 2. **Symlink required**: across filesystems, or pointing to a directory. **Hard link required**: when the link must survive the original being renamed, moved, or deleted.
@@ -202,14 +221,11 @@ Answer out loud as if interviewing. Force structure — not "uh, the thing in co
 7. Files `640` (rw-r-----), dirs `750` (rwxr-x---).
 8. Not in standard `stat`. ext4 stores it as `crtime` but POSIX `stat()` doesn't expose it — use `statx()` or `debugfs -R 'stat <inode>' /dev/sdX`.
 
-</details>
-
 ### Behavioral (45 min) — Story #1: Ownership
 
 Today's LP: **Ownership** (most-used LP for SRE/DevOps loops).
 
 Prompt to write a STAR story for:
-
 > "Tell me about a time you took on something outside your job description because it was the right thing for the team or the company."
 
 Write it down (don't memorize — internalize beats):
