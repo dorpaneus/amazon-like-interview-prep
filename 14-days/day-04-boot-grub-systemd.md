@@ -439,7 +439,8 @@ uname -r
 13. After a `dnf update`, how do you tell whether the box needs a full reboot versus just a service restart?
 14. A security CVE is in the kernel but the service can't take downtime now. What are your options?
 
-**Answers**
+<details>
+<summary><strong>Answers</strong></summary>
 
 1. Firmware (BIOS/UEFI) → bootloader (GRUB2) loads kernel + initramfs → kernel inits, mounts initramfs → initramfs loads storage drivers, mounts real `/` → `switch_root` to real root → exec `/sbin/init` (systemd, PID 1) → systemd reads `default.target` and brings up dependencies → target reached → login prompt.
 2. A small in-memory filesystem with just enough modules and tools to find and mount the real root filesystem. Needed because the kernel doesn't have built-in drivers for every storage controller, LVM, LUKS, multipath, NFS root, etc. Built by `dracut`.
@@ -455,6 +456,8 @@ uname -r
 12. `After=network-online.target nss-lookup.target` and `Wants=network-online.target`. `network-online.target` is "real" connectivity, not just "the network service started." `Wants` is a soft dependency that pulls the target in; `Requires` would fail your unit if the target failed.
 13. Compare running vs installed kernel (`uname -r` vs newest `/boot/vmlinuz-*`), or use the distro signal: `/var/run/reboot-required` on Debian/Ubuntu, `needs-restarting -r` on RHEL. For libraries (not the kernel), `needrestart` / `needs-restarting -s` / `lsof +c0 | grep DEL` show which *processes* hold deleted libs — restart just those instead of rebooting.
 14. Live patch the running kernel (`kpatch`/`canonical-livepatch`/Ksplice) to close the CVE now, then schedule the real reboot for a maintenance window. For a fleet, orchestrate rolling reboots behind a load balancer so capacity stays up.
+
+</details>
 
 ### Behavioral (45 min) — Story #4: Bias for Action
 
