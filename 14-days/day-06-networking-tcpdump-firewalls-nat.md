@@ -1,16 +1,19 @@
-# Day 6 — Networking II: tcpdump, Firewalls, NAT, Connectivity Debugging (Sun May 3)
+# 🛡️ Day 6 — Networking II: tcpdump, Firewalls, NAT, Connectivity Debugging
 
-Yesterday: protocols and the model. Today: the tools you reach for when something is broken. The interview scenario is "I can't reach this service" — and the answer isn't a guess, it's a method. By tonight you should have a layered debugging tree memorized and `tcpdump` BPF filters in muscle memory.
+> [!NOTE]
+> **The Goal:** Yesterday: protocols and the model. Today: the tools you reach for when something is broken. The interview scenario is "I can't reach this service" — and the answer isn't a guess, it's a method. 
+> 
+> By tonight you should have a layered debugging tree memorized and `tcpdump` BPF filters in muscle memory.
 
 ---
 
-## Morning Block (3h) — The diagnostic toolkit
+## 🧠 Morning Block (3h) — The diagnostic toolkit
 
 ### 6A. The connectivity-debugging tree (45 min)
 
 The **single most valuable thing** to internalize today. When asked "service X is unreachable, what do you do," walk this tree out loud:
 
-```
+```text
 1. Define the problem
    - From where? To where? Which service/port?
    - When did it start? After what change?
@@ -56,14 +59,14 @@ The **single most valuable thing** to internalize today. When asked "service X i
     - tcpdump on both ends, compare
 ```
 
-**The discipline**: don't skip layers. "It's probably DNS" is a guess. ICMP first, capture second, change nothing until you have data.
+> [!WARNING]
+> **The Discipline:** Don't skip layers. "It's probably DNS" is a guess. ICMP first, capture second, change nothing until you have data.
 
 ### 6B. tcpdump mastery (1h 15min)
 
 `tcpdump` is the single most powerful network diagnostic tool. Be fast with it.
 
 **Basic invocation**:
-
 ```bash
 sudo tcpdump -i eth0                  # capture on interface
 sudo tcpdump -i any                   # all interfaces (Linux-specific)
@@ -76,7 +79,7 @@ sudo tcpdump -r cap.pcap              # read back
 **The flags you'll use most**:
 
 | Flag | Meaning |
-|---|---|
+| :--- | :--- |
 | `-i <iface>` | interface (`any` for all) |
 | `-nn` | no DNS, no port-to-name lookups (faster, clearer) |
 | `-c <N>` | stop after N packets |
@@ -87,8 +90,6 @@ sudo tcpdump -r cap.pcap              # read back
 | `-X` | hex + ASCII payload (great for HTTP, breaks with TLS) |
 | `-A` | ASCII payload only (cleaner for plaintext protocols) |
 | `-e` | include link-layer header (MACs) |
-| `-tttt` | human-readable absolute timestamps |
-| `-G <s> -W <n>` | rotate every s seconds, keep n files |
 
 **BPF filter expressions** — the language inside the quotes. Memorize these patterns:
 
@@ -103,166 +104,98 @@ sudo tcpdump -r cap.pcap              # read back
 'port 443'
 'src port 443'
 'tcp port 80 or tcp port 443'
-'portrange 1000-2000'
 
 # Protocols
 'tcp' / 'udp' / 'icmp' / 'arp'
-'ip6'
 
 # Combinations — use 'and', 'or', 'not'
 'tcp port 443 and host 1.2.3.4'
 'not port 22'                                    # essential when SSH'd in
-'icmp or arp'
 
 # Network
 'net 10.0.0.0/8'
-'src net 192.168.1.0/24'
 
 # TCP flags — bitmask matching
 'tcp[tcpflags] & tcp-syn != 0'                   # any packet with SYN bit
 'tcp[tcpflags] == tcp-syn'                       # SYN only (no ACK = handshake initiation)
 'tcp[tcpflags] & (tcp-syn|tcp-fin) != 0'         # connection setup or teardown
 'tcp[tcpflags] & tcp-rst != 0'                   # resets (often interesting)
-
-# DNS
-'udp port 53'
-'port 53'
 ```
 
-**The `not port 22` trick is non-negotiable** when you're SSH'd into the box. Without it, your capture is dominated by your own SSH traffic and may even feed back on itself.
+> [!CAUTION]
+> **The `not port 22` trick is non-negotiable** when you're SSH'd into the box. Without it, your capture is dominated by your own SSH traffic and may even feed back on itself.
 
 **Reading tcpdump output** — anatomy of a line:
-
-```
+```text
 14:32:11.234567 IP 10.0.5.42.51234 > 93.184.216.34.443: Flags [S], seq 12345, win 64240, options [mss 1460,sackOK,...], length 0
 ```
-
-- Timestamp
-- `IP` — protocol decoded
-- `10.0.5.42.51234` — source IP and port
-- `>` — direction
-- `93.184.216.34.443` — destination IP and port
-- `Flags [S]` — TCP flags (`S` SYN, `.` ACK only, `S.` SYN-ACK, `F` FIN, `R` RST, `P` PUSH)
-- `seq` / `ack` — sequence and ack numbers
-- `win` — receiver window
-- `options` — TCP options (MSS, SACK, timestamps, window scale)
-- `length` — payload bytes (0 for handshake packets)
+- **Timestamp**
+- **`IP`** — protocol decoded
+- **`10.0.5.42.51234`** — source IP and port
+- **`>`** — direction
+- **`93.184.216.34.443`** — destination IP and port
+- **`Flags [S]`** — TCP flags (`S` SYN, `.` ACK only, `S.` SYN-ACK, `F` FIN, `R` RST, `P` PUSH)
 
 **The combinations** to look for in real triage:
-
 - **Lots of `[S]` with no `[S.]` reply** → SYN reaching destination but no response. Firewall dropping inbound, or destination silent.
 - **`[S]` then `[R.]` immediately** → port closed (TCP RST is the polite "no service here" reply).
-- **`[S]` retransmits, no reply** → packet lost, or firewall silently dropping (many firewalls drop instead of REJECT).
-- **`[F.]` from one side, no reply** → half-closed; peer may have crashed.
+- **`[S]` retransmits, no reply** → packet lost, or firewall silently dropping.
 - **Lots of `[R]`** → resets in the middle of a connection. App crashes, intermediaries timing out, RST attacks.
-
-**Capture and analyze workflow**:
-
-```bash
-# Capture during a reproduction
-sudo tcpdump -nni any -w /tmp/issue.pcap 'host <dst> and not port 22' &
-PID=$!
-# ... reproduce the issue ...
-sudo kill $PID
-
-# Quick read
-tcpdump -nnr /tmp/issue.pcap | less
-
-# Slice it
-tcpdump -nnr /tmp/issue.pcap 'tcp[tcpflags] & tcp-rst != 0'
-tcpdump -nnr /tmp/issue.pcap -c 50
-```
-
-For deep analysis, `wireshark` (or `tshark` from the same package) opens pcaps with full protocol dissection and the magic **Statistics → Conversations** / **Statistics → I/O Graphs** views. Worth knowing for "I'd export the pcap to Wireshark" answers.
 
 ### 6C. Firewalls — iptables, nftables, firewalld (45 min)
 
 Three layers of abstraction on the same kernel netfilter framework:
-
 - **`iptables`** — old userspace tool. Still works on RHEL; rules go through nftables compatibility layer underneath on RHEL 8+.
 - **`nftables`** (`nft`) — modern replacement. Single tool for IPv4/IPv6/ARP/bridge. **The default on RHEL 8+.**
 - **`firewalld`** — daemon with zone-based abstraction; configures nftables/iptables underneath. **The recommended interface on RHEL.**
 
 **netfilter mental model**: packets traverse **chains** at hooks in the kernel network stack:
-
 - `INPUT` — packets destined for this host
 - `OUTPUT` — packets generated by this host
 - `FORWARD` — packets routed through this host (only matters if IP forwarding is on)
 - `PREROUTING` / `POSTROUTING` — for NAT, before/after routing decision
 
-Each chain has rules; first match wins. Default policy at the end if nothing matches.
-
-**iptables — read it**:
-
-```bash
-sudo iptables -L -n -v --line-numbers           # filter table (default)
-sudo iptables -t nat -L -n -v                   # NAT table
-sudo iptables -S                                # save format (rule by rule)
-```
-
-Look for: default policy (`Chain INPUT (policy ACCEPT)` vs `(policy DROP)`), what's allowed, what's logged.
-
-**nftables — read it**:
-
-```bash
-sudo nft list ruleset
-sudo nft list table inet filter
-```
-
-The syntax is more readable: `tcp dport 22 accept` instead of `-p tcp --dport 22 -j ACCEPT`.
-
 **firewalld — the right RHEL way**:
-
 ```bash
-sudo firewall-cmd --get-default-zone
 sudo firewall-cmd --get-active-zones
 sudo firewall-cmd --list-all                    # active zone, full config
-sudo firewall-cmd --list-all --zone=public
 
 # Open a port
 sudo firewall-cmd --add-port=8080/tcp           # runtime only (lost on restart)
 sudo firewall-cmd --add-port=8080/tcp --permanent
 sudo firewall-cmd --reload                      # apply --permanent changes
-
-# Service (named bundle)
-sudo firewall-cmd --list-services
-sudo firewall-cmd --add-service=https --permanent && sudo firewall-cmd --reload
-
-# Remove
-sudo firewall-cmd --remove-port=8080/tcp --permanent && sudo firewall-cmd --reload
 ```
 
-**Zones** are firewalld's abstraction: each interface is bound to a zone, each zone has rules. `public` (default, restrictive), `trusted` (allow all), `internal`, `dmz`, etc.
+> [!TIP]
+> **The interview-friendly debugging move**: When "service is unreachable":
+> 1. `sudo nft list ruleset | less` (or `iptables -L -n -v`).
+> 2. Look at the *packet counters* (`-v`) on the relevant rule. Counter going up = packets are hitting that rule. Counter zero = packets aren't even arriving at that rule.
 
-**The interview-friendly debugging move**: when "service is unreachable":
-
-1. `sudo nft list ruleset | less` (or `iptables -L -n -v`).
-2. Look at the *packet counters* (`-v`) on the relevant rule. Counter going up = packets are hitting that rule. Counter zero = packets aren't even arriving at that rule.
-3. Add a temporary `LOG` rule before the suspect chain, watch `journalctl -k -f`.
-
-**DROP vs REJECT** — interview gotcha. `DROP` silently discards (sender retransmits, hangs). `REJECT` sends an ICMP unreachable (sender gets immediate "connection refused"). DROP is "stealthier" but worse for legitimate users — they see hangs instead of immediate failure.
+> [!WARNING]
+> **DROP vs REJECT (Interview Gotcha):** > `DROP` silently discards (sender retransmits, hangs). 
+> `REJECT` sends an ICMP unreachable (sender gets immediate "connection refused"). 
+> DROP is "stealthier" but worse for legitimate users — they see hangs instead of immediate failure. Security Groups in AWS act as a DROP.
 
 ### 6D. NAT — what your router does (15 min)
 
-**SNAT (source NAT)** — rewrite the source IP outbound. Used when many internal hosts share one public IP. Most home routers do this. The kernel maintains a connection-tracking table mapping `(internal_ip, internal_port) ↔ (public_ip, chosen_port)`.
-
-**DNAT (destination NAT)** — rewrite the destination IP inbound. Used to expose an internal service on a public IP. Port forwarding is DNAT.
-
-**MASQUERADE** — a special form of SNAT where the source IP is whatever the outbound interface's IP currently is. Used when the public IP is dynamic.
+- **SNAT (source NAT)** — rewrite the source IP outbound. Used when many internal hosts share one public IP (like an AWS NAT Gateway). 
+- **DNAT (destination NAT)** — rewrite the destination IP inbound. Used to expose an internal service on a public IP. Port forwarding is DNAT.
+- **MASQUERADE** — a special form of SNAT where the source IP is whatever the outbound interface's IP currently is. Used when the public IP is dynamic.
 
 **Conntrack** is what makes NAT work for stateful protocols (TCP) — the kernel remembers connections so reply packets can be reverse-mapped:
-
 ```bash
 sudo cat /proc/net/nf_conntrack | head    # active connections being tracked
-# or
-sudo conntrack -L | head
 ```
 
-When **conntrack table fills up** (`nf_conntrack: table full, dropping packet`), new connections fail. Tunables: `net.netfilter.nf_conntrack_max`, `nf_conntrack_buckets`. High-volume gateways need bumping.
+> [!IMPORTANT]
+> **☁️ The AWS Bridge: Conntrack & NAT Gateways**
+> When the **conntrack table fills up** (`nf_conntrack: table full, dropping packet`), new connections fail. 
+> * **On-Prem:** You tune `net.netfilter.nf_conntrack_max`. 
+> * **In AWS:** If an EC2 instance acts as a NAT (like a bastion or VPN server), it uses conntrack and can hit this limit. However, AWS managed NAT Gateways do *not* use Linux conntrack under the hood, but they have a hard limit of 55,000 concurrent connections to a single destination. 
 
 ---
 
-## Midday Block (2.5h) — Hands-on labs
+## 💻 Midday Block (2.5h) — Hands-on labs
 
 ### Lab 1: tcpdump in anger — capture and read the handshake (30 min)
 
@@ -270,14 +203,13 @@ When **conntrack table fills up** (`nf_conntrack: table full, dropping packet`),
 # Two terminals.
 
 # Terminal 1 — start capture, exclude SSH
-sudo tcpdump -nni any -c 30 'host www.google.com and not port 22'
+sudo tcpdump -nni any -c 30 'host [www.google.com](https://www.google.com) and not port 22'
 
 # Terminal 2 — generate the traffic
-curl -s https://www.google.com -o /dev/null
+curl -s [https://www.google.com](https://www.google.com) -o /dev/null
 ```
 
 **Read it together**:
-
 - Find the DNS query (UDP 53 to your resolver) and reply.
 - Find the SYN, SYN-ACK, ACK to port 443.
 - Find the TLS records (TLS handshake — first ones are cleartext).
@@ -296,7 +228,6 @@ PID=$!
 
 # From the same host
 nc -vz 127.0.0.1 9999                            # should succeed
-ss -tlnp | grep :9999
 
 # Now block it
 sudo firewall-cmd --add-rich-rule='rule family=ipv4 source address=127.0.0.1 port port=9999 protocol=tcp drop'
@@ -319,24 +250,17 @@ sudo firewall-cmd --remove-rich-rule='rule family=ipv4 source address=127.0.0.1 
 kill $PID 2>/dev/null
 ```
 
-**Lesson**: DROP shows up in capture as SYN with no reply (and the client retransmits, eventually times out). REJECT shows up as immediate ICMP unreachable, client fails fast. **You can tell DROP vs REJECT from the packet capture alone.**
+> [!NOTE]
+> **Lesson**: DROP shows up in capture as SYN with no reply (and the client retransmits, eventually times out). REJECT shows up as immediate ICMP unreachable, client fails fast. **You can tell DROP vs REJECT from the packet capture alone.**
 
 ### Lab 3: Walking the firewall (30 min)
 
 ```bash
-sudo firewall-cmd --get-default-zone
 sudo firewall-cmd --get-active-zones
 sudo firewall-cmd --list-all
 
 # What's active now in nftables?
 sudo nft list ruleset | head -80
-
-# Open a custom port and verify it shows up
-sudo firewall-cmd --add-port=12345/tcp
-sudo nft list ruleset | grep -A1 12345           # see the rule appear
-
-# Remove (runtime only, since we didn't say --permanent)
-sudo firewall-cmd --remove-port=12345/tcp
 
 # Practice: open HTTP/HTTPS permanently
 sudo firewall-cmd --add-service=http --add-service=https --permanent
@@ -371,44 +295,15 @@ done
 for f in /tmp/cap-*.pcap; do
   tcpdump -nnr $f 'tcp[tcpflags] & tcp-rst != 0'
 done
-
-# Show conversations (uses tshark; install if needed)
-# sudo dnf install -y wireshark-cli
-tshark -r /tmp/cap-*.pcap -q -z conv,tcp 2>/dev/null | head -20
 ```
 
-In a real on-call: capture with a tight filter, copy off, open in Wireshark on your laptop. Don't run Wireshark on the production box.
+### Lab 5: Mock incident — full diagnostic walk (30 min)
 
-### Lab 5: NAT and conntrack (20 min)
-
-```bash
-# View live conntrack
-sudo conntrack -L 2>/dev/null | head -20
-# or
-sudo cat /proc/net/nf_conntrack | head
-
-# Counts and tunables
-sudo sysctl net.netfilter.nf_conntrack_max
-sudo sysctl net.netfilter.nf_conntrack_count
-
-# How full is the table right now?
-echo "scale=2; $(sudo sysctl -n net.netfilter.nf_conntrack_count) * 100 / $(sudo sysctl -n net.netfilter.nf_conntrack_max)" | bc
-
-# Generate some conntrack entries
-for i in $(seq 1 5); do curl -s -m 2 https://www.google.com -o /dev/null; done
-sudo conntrack -L 2>/dev/null | grep -i google | head
-```
-
-The interview answer to "we hit `nf_conntrack: table full`": bump `net.netfilter.nf_conntrack_max` and `nf_conntrack_buckets` (the hash table size — should be ~max/4 to max/8), and shorten timeouts on UDP/TIME-WAIT entries if appropriate.
-
-### Lab 6: Mock incident — full diagnostic walk (30 min)
-
-Open a fresh terminal. The scenario: a teammate Slacks you "the API at internal-api.example.com:8443 is down for me, but the dashboards say it's up." Walk the tree out loud, command by command, even on your own machine where it's a fictional service.
+Open a fresh terminal. The scenario: a teammate Slacks you "the API at `internal-api.example.com:8443` is down for me, but the dashboards say it's up." Walk the tree out loud, command by command.
 
 ```bash
 # 1. Define
 # "down" — connection refused, timeout, slow, wrong response?
-# Just from you, or others?
 
 # 2. L1
 ip link show
@@ -435,11 +330,9 @@ sudo tcpdump -nni any -c 10 'host internal-api.example.com' &
 nc -vz -w 3 internal-api.example.com 8443
 ```
 
-The point isn't that the test target exists — it's the **rhythm**: define → bottom-up → capture if mysterious → never skip a layer.
-
 ---
 
-## Afternoon Block (1.5h) — Drills + Story #6
+## 🎯 Afternoon Block (1.5h) — Drills + Story #6
 
 ### Self-check (45 min)
 
@@ -457,7 +350,7 @@ The point isn't that the test target exists — it's the **rhythm**: define → 
 12. tcpdump shows no DNS reply for a query. Where do you check next?
 
 <details>
-<summary>Answers</summary>
+<summary><strong>Answers</strong> (click to reveal)</summary>
 
 1. Define problem → L1 (link state) → L2 (ARP) → L3 (IP, route, gateway, ICMP) → DNS → path (mtr) → L4 reachability (nc -vz) → firewall (local + remote, plus cloud security groups) → L7 (curl/openssl) → capture if still stuck.
 2. (a) Network drops the packet en route, (b) destination's firewall DROPs (silent), (c) destination has no listener and the kernel is silently dropping (extremely unusual — should send RST), (d) routing problem on the return path so the SYN-ACK doesn't make it back, (e) destination is overloaded and `tcp_max_syn_backlog` is full.
@@ -474,17 +367,18 @@ The point isn't that the test target exists — it's the **rhythm**: define → 
 
 </details>
 
-### Behavioral (45 min) — Story #6: Earn Trust
+### 🤝 Behavioral (45 min) — Story #6: Earn Trust
 
-Today's LP. Story prompt:
+Today's LP: **Earn Trust**.
 
+Prompt:
 > "Tell me about a time you had to deliver bad news, push back on a stakeholder, or admit you were wrong."
 
-Earn Trust stories work in three flavors — pick whichever fits a real story you have:
-
-- **Vocally self-critical**: you noticed something *you* did wrong, raised it before anyone else did, owned the fix. Bonus if it would have stayed hidden.
-- **Honest delivery**: you told a leader/customer something they didn't want to hear (slipped deadline, design flaw, security risk), with the data and a path forward.
-- **Built credibility through consistent follow-through**: a relationship was strained or distrustful, and you rebuilt it through specific actions over time.
+> [!TIP]
+> Earn Trust stories work in three flavors — pick whichever fits a real story you have:
+> - **Vocally self-critical**: you noticed something *you* did wrong, raised it before anyone else did, owned the fix. Bonus if it would have stayed hidden.
+> - **Honest delivery**: you told a leader/customer something they didn't want to hear (slipped deadline, design flaw, security risk), with the data and a path forward.
+> - **Built credibility through consistent follow-through**: a relationship was strained or distrustful, and you rebuilt it through specific actions over time.
 
 Avoid: stories where you just listened well or "communicated clearly." That's table stakes. Earn Trust requires friction — bad news, hard truth, or self-criticism.
 
