@@ -1,31 +1,30 @@
-# Day 7 — Scripting and Log Parsing (Mon May 4)
+# 📜 Day 7 — Scripting and Log Parsing
 
-End of week one. Today is the **live-coding day**. The reported question — "extract IPs and error codes from log files" — is the most likely live-coding scenario for this role. We'll write that code, but the real skill is **what you say while you type**: narrating tradeoffs, asking clarifying questions, recognizing when the toy answer is wrong for production scale.
-
-The interviewer is watching for: Python or Bash fluency? Do you stream or load the whole file? Do you know what regex you wrote? Do you handle malformed input? Do you know when to reach for `awk`, when to reach for Python, and when neither is the right answer?
+> [!NOTE]
+> **The Goal:** End of week one. Today is the **live-coding day**. The reported question — "extract IPs and error codes from log files" — is the most likely live-coding scenario for this role. We'll write that code, but the real skill is **what you say while you type**: narrating tradeoffs, asking clarifying questions, recognizing when the toy answer is wrong for production scale.
+>
+> The interviewer is watching for: Bash fluency? Do you stream or load the whole file? Do you know what regex you wrote? Do you handle malformed input? Do you know when to reach for `awk`?
 
 ---
 
-## Morning Block (3h) — Tools and idioms
+## 🧠 Morning Block (3h) — Tools and idioms
 
 ### 7A. Choosing the right tool (30 min)
 
 The first thing to **say out loud** in a live-coding session: "What scale are we at?" The answer drives the tool.
 
 | Scale | Tool |
-|---|---|
+| :--- | :--- |
 | One file, a few MB, one-off | `grep`/`awk`/`sort` one-liner |
-| One file, GBs, recurring | Python streaming, or `awk` |
+| One file, GBs, recurring | Bash streaming with `awk`, or Python |
 | Many files across hosts, recurring | Centralized logging (CloudWatch Insights, Athena, Elasticsearch) |
 | Real-time analysis | Stream processor (Kinesis, Kafka + consumers), or eBPF for live system data |
 
-**The interview-winning answer** to the log-parsing question is *not* the cleverest regex. It's:
-
-1. Ask the scale and frequency.
-2. Solve the toy version cleanly.
-3. **Note that at production scale you wouldn't grep files** — logs would already be in CloudWatch Logs Insights / Athena / Elasticsearch, queryable by structured fields. The grep-the-file solution is for ad-hoc debugging on one box.
-
-That sentence alone separates you from candidates who only show off regex.
+> [!TIP]
+> **The interview-winning answer** to the log-parsing question is *not* the cleverest regex. It's:
+> 1. Ask the scale and frequency.
+> 2. Solve the toy version cleanly.
+> 3. **Note that at production scale you wouldn't grep files** — logs would already be in CloudWatch Logs Insights / Athena / Elasticsearch, queryable by structured fields. The grep-the-file solution is for ad-hoc debugging on one box.
 
 ### 7B. Bash hygiene (45 min)
 
@@ -68,7 +67,8 @@ tmp=$(mktemp)
 trap 'rm -f "$tmp"' EXIT             # clean up even on failure
 ```
 
-Don't use `/tmp/foo.$$` — predictable, race-prone, and not cleaned up on failure.
+> [!WARNING]
+> Don't use `/tmp/foo.$$` — predictable, race-prone, and not cleaned up on failure.
 
 **5. `command -v` to test for a binary**:
 
@@ -151,89 +151,90 @@ awk '{print $1}' access.log | sort | uniq -c | sort -rn | head -10
 awk '{c[$1]++} END {for (k in c) print c[k], k}' access.log | sort -rn | head
 ```
 
-### 7D. Python — patterns for live-coding (1h)
+### 7D. Bash — patterns for live-coding (1h)
 
-**The skeleton** for any "process a log file" question:
+**The skeleton** for any "process a log file" question using `awk`:
 
-```python
-#!/usr/bin/env python3
-import re
-import sys
-from collections import Counter
+```bash
+#!/bin/bash
+set -euo pipefail
+IFS=$'\n\t'
 
-def main(path):
-    ip_re = re.compile(r'\b(?:\d{1,3}\.){3}\d{1,3}\b')
-    err_re = re.compile(r'\b(?:[45]\d{2})\b')
+LOG="${1:?usage: $0 <logfile>}"
 
-    ips, codes = Counter(), Counter()
+[[ -r "$LOG" ]] || { echo "$LOG: not readable" >&2; exit 1; }
 
-    with open(path) as f:
-        for line in f:                    # streaming, line by line
-            for ip in ip_re.findall(line):
-                ips[ip] += 1
-            for code in err_re.findall(line):
-                codes[code] += 1
+# Using a single awk script to process the file once
+awk '
+BEGIN {
+    # Define regular expressions
+    ip_re = "^[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}$"
+    err_re = "^[45][0-9]{2}$"
+}
+{
+    # Basic validation (could be more robust based on log format)
+    if (NF >= 9) {
+        ip = $1
+        status = $9
+        path = $7
 
-    print("Top 10 IPs:")
-    for ip, count in ips.most_common(10):
-        print(f"  {count:6d}  {ip}")
+        if (ip ~ ip_re) {
+            ips[ip]++
+        }
+        if (status ~ err_re) {
+            codes[status]++
+            paths[path]++
+        }
+    } else {
+        malformed++
+    }
+}
+END {
+    print "Top 10 IPs:"
+    # Use sort to handle the ordering
+    for (ip in ips) {
+        printf "%6d  %s\n", ips[ip], ip | "sort -rn | head -n 10"
+    }
+    close("sort -rn | head -n 10") # Important to close the pipe
 
-    print("\nError codes:")
-    for code, count in codes.most_common():
-        print(f"  {count:6d}  {code}")
+    print "\nError codes:"
+    for (code in codes) {
+        printf "%6d  %s\n", codes[code], code | "sort -rn"
+    }
+    close("sort -rn")
 
-if __name__ == '__main__':
-    if len(sys.argv) != 2:
-        sys.exit(f"usage: {sys.argv[0]} <logfile>")
-    main(sys.argv[1])
+    print "\nTop 10 error paths:"
+    for (path in paths) {
+        printf "%6d  %s\n", paths[path], path | "sort -rn | head -n 10"
+    }
+    close("sort -rn | head -n 10")
+    
+    if (malformed > 0) {
+        printf "\nMalformed lines skipped: %d\n", malformed > "/dev/stderr"
+    }
+}' "$LOG"
 ```
 
 **Things to say out loud while writing it**:
 
-- *"I'm streaming line-by-line so this works on multi-GB files without loading everything."*
-- *"I'm using `Counter` because counting is the obvious data structure."*
-- *"This regex catches anything that *looks* like an IPv4. `0.0.0.0` and `999.999.999.999` would both match — I'd validate with `ipaddress.ip_address(...)` if accuracy mattered."*
-- *"The 4xx/5xx regex is naive — it'd match `400` inside a port number or content length. In real log parsing I'd anchor to the position where the status appears, e.g. by parsing the log format properly."*
+- *"I'm using `awk` because it processes the file sequentially and is highly optimized for text processing, allowing me to avoid loading the entire file into memory."*
+- *"I'm using associative arrays (like `ips[ip]++`) which act like a dictionary or hash map to keep counts."*
+- *"This regex catches anything that *looks* like an IPv4. `0.0.0.0` and `999.999.999.999` would both match. If I needed strict validation, I might write a shell function or reach for Python, but `awk` is sufficient for standard logs."*
+- *"The 4xx/5xx regex is anchored. `awk` natively splits on whitespace, making it easy to access the status code (usually column 9 in combined format)."*
 
 **The thing that separates intermediate from senior** — when the interviewer says "now make it 100x faster" or "this file is 50 GB":
 
-- **Compile the regex once** (already done above).
-- **Pre-filter with `'in'` before regex** — if `'500' not in line` you can skip the regex.
-- **`mmap` for very large files** — but lose line orientation; usually not worth the complexity.
-- **Parallelize** — split file into chunks, process with `multiprocessing.Pool`, merge counters.
-- **Or: stop. The right answer is "this shouldn't be a Python script. This is a CloudWatch Logs Insights query / Athena query / Elasticsearch search."**
-
-**Apache/Nginx log parsing — the right way**:
-
-```python
-import re
-# Combined Log Format:
-# host ident user [time] "method path proto" status size "referer" "ua"
-LOG_RE = re.compile(
-    r'(?P<ip>\S+) \S+ \S+ \[(?P<time>[^\]]+)\] '
-    r'"(?P<method>\S+) (?P<path>\S+) \S+" '
-    r'(?P<status>\d{3}) (?P<size>\S+)'
-)
-
-with open('access.log') as f:
-    for line in f:
-        m = LOG_RE.match(line)
-        if not m:
-            continue                       # malformed; skip (and maybe count)
-        if m['status'].startswith(('4', '5')):
-            print(m['ip'], m['status'], m['path'])
-```
-
-**Use named groups.** Use `match.groupdict()` if you need a dict. Anchor to *positions* in the format, not "anything that looks like a number."
+- **Pre-filter** — if you only care about errors, `grep -E 'HTTP/1\.[01]" [45]'` before piping to `awk`.
+- **Parallelize** — split the file or use `xargs -P` or GNU `parallel`.
+- **Or: stop. The right answer is "this shouldn't be a Bash script. This is a CloudWatch Logs Insights query / Athena query / Elasticsearch search."**
 
 **Edge cases to mention** (even if you don't code them all):
 
-- **Malformed lines** — count them and report; don't crash.
-- **Multi-line entries** (Java stack traces, JSON pretty-printed) — line-by-line breaks. State machine or join-by-timestamp.
-- **Log rotation** mid-script — if tailing, watch for inode change.
-- **Compressed logs** — `gzip.open()` or `subprocess.Popen(['zcat', f])`.
-- **Encoding** — pass `encoding='utf-8', errors='replace'` if the file might have garbage bytes.
-- **IPv6** — `\b(?:\d{1,3}\.){3}\d{1,3}\b` won't match. Use `ipaddress` module to validate after a coarser regex.
+- **Malformed lines** — count them and report; don't crash. My script does a basic `NF >= 9` check.
+- **Multi-line entries** (Java stack traces, JSON pretty-printed) — line-by-line breaks. You'd need a more complex `awk` script using custom `RS` (Record Separator) or a different tool entirely.
+- **Log rotation** mid-script — if tailing, `tail -F` is needed.
+- **Compressed logs** — `zcat` or `zgrep` to read on the fly.
+- **IPv6** — The simple regex won't match.
 
 ### 7E. Regex essentials (30 min)
 
@@ -241,40 +242,29 @@ The patterns you'll write under pressure:
 
 | Pattern | Matches |
 |---|---|
-| `\d` | digit (PCRE only — in basic regex use `[0-9]`) |
-| `\s` / `\S` | whitespace / non-whitespace |
-| `\w` / `\W` | word char `[a-zA-Z0-9_]` / non-word |
-| `\b` | word boundary |
+| `[0-9]` | digit (`\d` works in `grep -P`, but not basic `awk` or `sed`) |
+| `[ \t]` | whitespace |
+| `[a-zA-Z0-9_]` | word char |
+| `\b` | word boundary (support varies by tool) |
 | `^` / `$` | start / end of line |
 | `.` | any char except newline |
-| `*` `+` `?` | 0+ / 1+ / 0 or 1 |
-| `{n,m}` | between n and m times |
+| `*` `+` `?` | 0+ / 1+ / 0 or 1 (`+` and `?` often require Extended Regex `-E`) |
+| `{n,m}` | between n and m times (often requires Extended Regex) |
 | `[abc]` | character class |
 | `[^abc]` | negated class |
 | `(...)` | group |
-| `(?:...)` | non-capturing group |
-| `(?P<name>...)` | named group (Python) |
-| `\1` / `\g<name>` | backreference |
 
-**Greedy vs lazy**: `.*` is greedy (matches as much as possible). `.*?` is lazy (matches as little as possible). For "everything between two brackets," prefer `\[([^\]]*)\]` over `\[(.*?)\]` — character-class-negation is faster and correct.
-
-**Anchoring discipline** — the most common bug. `\d{3}` matches `500` *anywhere*, including inside `1500`. Use `\b\d{3}\b`.
-
-**Compile once, reuse** in Python:
-
-```python
-PATTERN = re.compile(r'...')        # at module level
-PATTERN.findall(line)               # in the loop
-```
+**Anchoring discipline** — the most common bug. `[0-9]{3}` matches `500` *anywhere*, including inside `1500`. Use `^[0-9]{3}$` if checking a specific field, or boundaries if searching a whole string.
 
 ---
 
-## Midday Block (2.5h) — Hands-on labs
+## 💻 Midday Block (2.5h) — Hands-on labs
 
 ### Lab 1: Generate a log file to work on (15 min)
 
 ```bash
 mkdir -p ~/day7 && cd ~/day7
+# Using a simple python one-liner just to generate data
 python3 - <<'EOF' > access.log
 import random, datetime
 random.seed(42)
@@ -310,7 +300,7 @@ Write each of these without looking at the answer first. Then check.
 5. Requests per minute (the timestamp is column 4).
 
 <details>
-<summary>Answers</summary>
+<summary><strong>Answers</strong></summary>
 
 ```bash
 # 1
@@ -332,13 +322,13 @@ awk -F'[][]' '{print substr($2, 1, 17)}' access.log | sort | uniq -c | sort -rn 
 
 </details>
 
-### Lab 3: The Python live-coding solution, end to end (45 min)
+### Lab 3: The Bash live-coding solution, end to end (45 min)
 
 Write this from scratch on paper or in a fresh file before looking. **Time yourself — 15 minutes target.**
 
 Requirements:
 
-- Read a log file path from `argv[1]`.
+- Read a log file path from `$1`.
 - Print top 10 IPs by request count.
 - Print count of each 4xx and 5xx status code.
 - Print top 10 paths that returned errors.
@@ -347,76 +337,78 @@ Requirements:
 
 Then compare with this reference:
 
-```python
-#!/usr/bin/env python3
-"""Parse Apache/Nginx combined-format access log."""
-import re
-import sys
-from collections import Counter
+```bash
+#!/bin/bash
+set -euo pipefail
 
-LOG_RE = re.compile(
-    r'(?P<ip>\S+) \S+ \S+ \[(?P<time>[^\]]+)\] '
-    r'"(?P<method>\S+) (?P<path>\S+) \S+" '
-    r'(?P<status>\d{3}) (?P<size>\S+)'
-)
+LOG="${1:-}"
 
-def parse(path):
-    ips = Counter()
-    error_codes = Counter()
-    error_paths = Counter()
-    malformed = 0
+if [[ -z "$LOG" ]]; then
+    echo "Usage: $0 <logfile>" >&2
+    exit 1
+fi
 
-    with open(path, encoding='utf-8', errors='replace') as f:
-        for line in f:
-            m = LOG_RE.match(line)
-            if not m:
-                malformed += 1
-                continue
+if [[ ! -f "$LOG" || ! -r "$LOG" ]]; then
+    echo "Error: Cannot read file $LOG" >&2
+    exit 1
+fi
 
-            ips[m['ip']] += 1
-            status = m['status']
-            if status[0] in ('4', '5'):
-                error_codes[status] += 1
-                error_paths[m['path']] += 1
+awk '
+BEGIN {
+    err_re = "^[45][0-9]{2}$"
+}
+{
+    if (NF >= 9) {
+        ip = $1
+        status = $9
+        path = $7
 
-    return ips, error_codes, error_paths, malformed
+        ips[ip]++
+        
+        if (status ~ err_re) {
+            codes[status]++
+            paths[path]++
+        }
+    } else {
+        malformed++
+    }
+}
+END {
+    print "Top 10 IPs:"
+    for (ip in ips) {
+        printf "%6d  %s\n", ips[ip], ip | "sort -rn | head -n 10"
+    }
+    close("sort -rn | head -n 10")
 
-def main():
-    if len(sys.argv) != 2:
-        sys.exit(f"usage: {sys.argv[0]} <logfile>")
+    print "\nError codes:"
+    for (code in codes) {
+        printf "%6d  %s\n", codes[code], code | "sort -rn"
+    }
+    close("sort -rn")
 
-    ips, codes, paths, bad = parse(sys.argv[1])
-
-    print("Top 10 IPs:")
-    for ip, n in ips.most_common(10):
-        print(f"  {n:6d}  {ip}")
-
-    print("\nError codes:")
-    for code, n in sorted(codes.items()):
-        print(f"  {n:6d}  {code}")
-
-    print("\nTop 10 error paths:")
-    for path, n in paths.most_common(10):
-        print(f"  {n:6d}  {path}")
-
-    if bad:
-        print(f"\nMalformed lines skipped: {bad}", file=sys.stderr)
-
-if __name__ == '__main__':
-    main()
+    print "\nTop 10 error paths:"
+    for (path in paths) {
+        printf "%6d  %s\n", paths[path], path | "sort -rn | head -n 10"
+    }
+    close("sort -rn | head -n 10")
+    
+    if (malformed > 0) {
+        printf "\nMalformed lines skipped: %d\n", malformed > "/dev/stderr"
+    }
+}' "$LOG"
 ```
 
 ```bash
-chmod +x parselog.py
-./parselog.py access.log
+chmod +x parselog.sh
+./parselog.sh access.log
 ```
 
 **Things to verbalize as you write (rehearse this)**:
 
-- *"I'm using a regex match for the whole line so I get structured fields rather than fishing for status codes and IPs separately. The naive approach would mismatch e.g. a 500-byte size field with the 500 status."*
-- *"I'm using `Counter.most_common()` because it's already sorted internally."*
-- *"I'm counting malformed lines instead of crashing on them. In production I'd log them somewhere for inspection."*
-- *"This is fine for a single file. At fleet scale, I'd push these logs to CloudWatch Logs and run an Insights query — `stats count() by status` and `filter status >= 400` — that runs against indexed data instead of grep'ing files."*
+- *"I'm using `awk` to process the file in a single pass. This is efficient and keeps memory usage low since we only store the unique counts."*
+- *"I'm using `NF >= 9` as a basic check for malformed lines. If a line is cut short, it won't have the status field where we expect it."*
+- *"I'm piping the output from the `awk` arrays into `sort` and `head` directly from within `awk` to get the top counts."*
+- *"For a real production environment, if I need robust parsing (like handling escaped quotes in URLs), I would switch to Python or use a dedicated log parser. If it's fleet-scale, I'd query CloudWatch."*
 
 ### Lab 4: Make it 10x faster (30 min)
 
@@ -437,230 +429,170 @@ with open('big.log','w') as f:
         f.write(f'{random.choice(ips)} - - [{ts}] "{random.choice(methods)} {random.choice(paths)} HTTP/1.1" {random.choice(statuses)} {random.randint(100,9000)} "-" "Mozilla/5.0"\n')
 EOF
 ls -lh big.log
-time ./parselog.py big.log >/dev/null
+time ./parselog.sh big.log >/dev/null
 ```
 
 Now optimize. Try:
 
 1. **Pre-filter cheap before regex**:
-
-```python
-for line in f:
-    if not line:
-        continue
-    # Quick path: if no error status anywhere on the line, skip cheaper analysis
-    m = LOG_RE.match(line)
-    ...
-```
-
-2. **Skip the regex when only counting IPs** — split the line on the first space:
-
-```python
-ip = line.partition(' ')[0]
-ips[ip] += 1
-```
-
-3. **Compare with a pure-awk implementation**:
+If you only need error codes, filtering with `grep` before `awk` can be faster.
 
 ```bash
-time awk '{print $1}' big.log | sort | uniq -c | sort -rn | head -10
+time grep -E 'HTTP/1\.[01]" [45][0-9]{2}' big.log | awk '{print $7}' | sort | uniq -c | sort -rn | head -10
 ```
 
-You'll often find `awk | sort | uniq -c | sort -rn` is faster than naive Python — and slower than well-written Python with `Counter`. **Saying that out loud — "let me check whether `awk` would be faster here" — is exactly the senior-engineer instinct interviewers look for.**
+You'll often find pipelines of standard tools (`grep | awk | sort | uniq -c`) are heavily optimized. **Saying that out loud — "let me check if pre-filtering with `grep` is faster here" — is exactly the senior-engineer instinct interviewers look for.**
 
-### Lab 5: Bash version of the same task (30 min)
+### Lab 5: A Bash production-shape script (30 min)
 
-Bash with strict mode, the right way:
+The version with everything you'd actually want in code review: help text, robust options parsing, and handling compressed files.
 
 ```bash
 #!/bin/bash
 set -euo pipefail
 IFS=$'\n\t'
 
-LOG="${1:?usage: $0 <logfile>}"
+show_help() {
+    echo "Usage: $0 [OPTIONS] <logfile>"
+    echo "Analyzes Apache/Nginx combined-format access logs."
+    echo ""
+    echo "Options:"
+    echo "  -n, --top N    Show top N results (default: 10)"
+    echo "  -h, --help     Show this help message"
+}
 
-[[ -r "$LOG" ]] || { echo "$LOG: not readable" >&2; exit 1; }
+TOP=10
 
-echo "Top 10 IPs:"
-awk '{print $1}' "$LOG" | sort | uniq -c | sort -rn | head -10
+# Parse arguments
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+        -n|--top) TOP="$2"; shift ;;
+        -h|--help) show_help; exit 0 ;;
+        -*) echo "Unknown parameter: $1" >&2; exit 1 ;;
+        *) LOG="$1" ;;
+    esac
+    shift
+done
 
-echo
-echo "Error codes:"
-awk '$9 ~ /^[45]/ {print $9}' "$LOG" | sort | uniq -c | sort -rn
+if [[ -z "${LOG:-}" ]]; then
+    show_help >&2
+    exit 1
+fi
 
-echo
-echo "Top 10 error paths:"
-awk '$9 ~ /^[45]/ {print $7}' "$LOG" | sort | uniq -c | sort -rn | head -10
-```
+if [[ ! -f "$LOG" || ! -r "$LOG" ]]; then
+    echo "Error: Cannot read file $LOG" >&2
+    exit 1
+fi
 
-Compare with `time` against the Python version:
+# Determine how to read the file (handle gzip)
+READ_CMD="cat"
+if [[ "$LOG" == *.gz ]]; then
+    READ_CMD="zcat"
+fi
 
-```bash
-time bash parselog.sh big.log >/dev/null
-time ./parselog.py big.log >/dev/null
-```
+$READ_CMD "$LOG" | awk -v top="$TOP" '
+BEGIN {
+    err_re = "^[45][0-9]{2}$"
+}
+{
+    total++
+    if (NF >= 9) {
+        ip = $1
+        status = $9
+        path = $7
 
-For pure aggregation on well-formed logs, the awk pipeline is hard to beat. Python wins when the parsing is more complex, when you need joined data, or when you'd actually use the parsed values in further code.
-
-### Lab 6: A Python production-shape script (30 min)
-
-The version with everything you'd actually want in code review: argparse, logging, gzip support, type hints.
-
-```python
-#!/usr/bin/env python3
-"""Apache combined-format log analyzer."""
-from __future__ import annotations
-import argparse
-import gzip
-import logging
-import re
-import sys
-from collections import Counter
-from contextlib import contextmanager
-from pathlib import Path
-from typing import Iterator, TextIO
-
-LOG_RE = re.compile(
-    r'(?P<ip>\S+) \S+ \S+ \[(?P<time>[^\]]+)\] '
-    r'"(?P<method>\S+) (?P<path>\S+) \S+" '
-    r'(?P<status>\d{3}) (?P<size>\S+)'
-)
-log = logging.getLogger(__name__)
-
-@contextmanager
-def open_log(path: Path) -> Iterator[TextIO]:
-    if path.suffix == '.gz':
-        with gzip.open(path, 'rt', encoding='utf-8', errors='replace') as f:
-            yield f
-    else:
-        with path.open(encoding='utf-8', errors='replace') as f:
-            yield f
-
-def analyze(path: Path) -> dict:
-    ips: Counter[str] = Counter()
-    codes: Counter[str] = Counter()
-    paths: Counter[str] = Counter()
-    malformed = 0
-    total = 0
-
-    with open_log(path) as f:
-        for line in f:
-            total += 1
-            m = LOG_RE.match(line)
-            if not m:
-                malformed += 1
-                continue
-            ips[m['ip']] += 1
-            status = m['status']
-            if status[0] in ('4', '5'):
-                codes[status] += 1
-                paths[m['path']] += 1
-
-    return {
-        'total': total,
-        'malformed': malformed,
-        'ips': ips,
-        'codes': codes,
-        'paths': paths,
+        ips[ip]++
+        
+        if (status ~ err_re) {
+            codes[status]++
+            paths[path]++
+        }
+    } else {
+        malformed++
     }
+}
+END {
+    print "Total lines: " total ", malformed: " malformed + 0
 
-def report(r: dict, top: int) -> None:
-    print(f"Total lines: {r['total']}, malformed: {r['malformed']}")
-    print(f"\nTop {top} IPs:")
-    for ip, n in r['ips'].most_common(top):
-        print(f"  {n:6d}  {ip}")
-    print("\nError codes:")
-    for code, n in sorted(r['codes'].items()):
-        print(f"  {n:6d}  {code}")
-    print(f"\nTop {top} error paths:")
-    for p, n in r['paths'].most_common(top):
-        print(f"  {n:6d}  {p}")
+    print "\nTop " top " IPs:"
+    sort_cmd = "sort -rn | head -n " top
+    for (ip in ips) {
+        printf "%6d  %s\n", ips[ip], ip | sort_cmd
+    }
+    close(sort_cmd)
 
-def main() -> int:
-    ap = argparse.ArgumentParser()
-    ap.add_argument('logfile', type=Path)
-    ap.add_argument('--top', type=int, default=10)
-    ap.add_argument('-v', '--verbose', action='store_true')
-    args = ap.parse_args()
+    print "\nError codes:"
+    for (code in codes) {
+        printf "%6d  %s\n", codes[code], code | "sort -rn"
+    }
+    close("sort -rn")
 
-    logging.basicConfig(
-        level=logging.DEBUG if args.verbose else logging.INFO,
-        format='%(asctime)s %(levelname)s %(message)s',
-    )
-
-    if not args.logfile.is_file():
-        log.error("not a file: %s", args.logfile)
-        return 1
-
-    report(analyze(args.logfile), args.top)
-    return 0
-
-if __name__ == '__main__':
-    sys.exit(main())
+    print "\nTop " top " error paths:"
+    for (path in paths) {
+        printf "%6d  %s\n", paths[path], path | sort_cmd
+    }
+    close(sort_cmd)
+}'
 ```
 
 Run it:
 
 ```bash
-chmod +x parselog2.py
-./parselog2.py access.log --top 5
+chmod +x parselog2.sh
+./parselog2.sh -n 5 access.log
 gzip -k big.log               # creates big.log.gz alongside
-./parselog2.py big.log.gz --top 5
+./parselog2.sh big.log.gz --top 5
 ```
 
-This is the version that survives a code review. Mention each detail you'd add — argparse, gzip support, logging, type hints — even if you wouldn't write all of it on a 25-minute interview.
+This is the version that survives a code review. Mention each detail you'd add — argument parsing, gzip support — even if you wouldn't write all of it on a 25-minute interview.
 
 ---
 
-## Afternoon Block (1.5h) — Drills + Story #7
+## 🎯 Afternoon Block (1.5h) — Drills + Story #7
 
 ### Self-check (45 min)
 
 1. Walk through what `set -euo pipefail` does, line by line.
 2. Why `[[` over `[`?
-3. Write a regex for an IPv4 address and explain its limitations.
-4. `awk '{print $1}' access.log | sort | uniq -c | sort -rn | head` — explain each stage.
-5. The script reads a 50 GB log file. How do you make sure it doesn't OOM?
-6. The interviewer says "now also count unique users." Walk me through how you'd modify your Python script.
-7. Why would you compile a regex outside the loop?
-8. `grep -E` vs `grep -P` — what's the difference, and when does it matter?
-9. Production scenario: you need to find which IPs hit your API more than 100 times in the last hour. Walk through how you'd actually do this — not the toy answer.
-10. A log line is malformed. What does your script do, and what should it do?
-11. The log file is being actively written. How do you read it without missing entries or crashing on rotation?
-12. The interviewer says: "your regex matches `999.999.999.999`. Fix it." How?
+3. `awk '{print $1}' access.log | sort | uniq -c | sort -rn | head` — explain each stage.
+4. The script reads a 50 GB log file. How do you make sure it doesn't OOM?
+5. The interviewer says "now also count unique users." Walk me through how you'd modify your `awk` script.
+6. `grep -E` vs `grep -P` — what's the difference, and when does it matter?
+7. Production scenario: you need to find which IPs hit your API more than 100 times in the last hour. Walk through how you'd actually do this — not the toy answer.
+8. A log line is malformed. What does your script do, and what should it do?
+9. The log file is being actively written. How do you read it without missing entries or crashing on rotation?
+10. The interviewer asks why you didn't use Python for this task. What is your response?
 
 <details>
-<summary>Answers</summary>
+<summary><strong>Answers</strong> (click to reveal)</summary>
 
 1. `-e` exit on any non-zero command (catches errors immediately). `-u` treat unset variables as errors (catches typos). `-o pipefail` pipeline fails if any stage fails (default counts only the last). Together: scripts fail fast on real errors instead of plowing forward producing garbage.
 2. `[[ ]]` is a Bash builtin — supports `&&`, `||`, regex `=~`, lexicographic `<`/`>`, no word splitting on unquoted vars (so `[[ -z $x ]]` works without quotes). `[ ]` is `/usr/bin/test`, POSIX, no `&&`, brittle with empty/unquoted variables.
-3. `\b(?:\d{1,3}\.){3}\d{1,3}\b`. Matches anything four-octet-shaped, including `999.999.999.999` and `0.0.0.0`. For correctness, validate with Python's `ipaddress.ip_address(s)` — raises ValueError on invalid.
-4. Print column 1 (IPs in Apache format) → sort lexically (required for uniq) → count consecutive duplicates → sort by count descending → top N. Standard "histogram of column" pattern.
-5. Stream line-by-line with `for line in f:`. Don't `f.read()` or `f.readlines()`. Counters scale with cardinality (number of unique IPs), not line count, so they're bounded.
-6. Add `users: Counter[str] = Counter()` (or whichever field), increment in the loop, report it. The shape of the script — match → extract → count — doesn't change.
-7. `re.compile()` parses the pattern once. Without it, Python uses an internal cache, but the cache is bounded and explicit compilation is cleaner and slightly faster, especially when the pattern is complex.
-8. `-E` is ERE (Extended Regex) — POSIX standard, no `\d`, no lookarounds. `-P` is PCRE — Perl-compatible, supports `\d`, `\b`, lookahead/lookbehind, but is non-portable (not on all systems, slower). Use `-E` by default; reach for `-P` when you need PCRE features.
-9. Real production: query the centralized log store (CloudWatch Logs Insights: `stats count() by clientIp | filter @timestamp > ago(1h) | sort count() desc`). If you must do it on box: `awk -v cutoff="$(date -u -d '1 hour ago' +%s)" '...'` is fragile; better to ship logs somewhere queryable.
-10. Currently it counts and continues. Should: log a sample of malformed lines (with line number) for debugging, expose a malformed counter to monitoring, fail loud if malformed > some threshold (could indicate format change upstream).
-11. For a static-but-rotating file: track inode (`os.stat(...).st_ino`); if it changed, file rotated, reopen. For tailing: use `tail -F` (capital F follows by name across rotations). For production: agents like Vector / Fluent Bit / CloudWatch Agent handle this correctly.
-12. Use `ipaddress.ip_address(s)` after the regex match. Or use a stricter regex with bounded octets: `(?:25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)` per octet — but the validation-after approach is more readable and equally correct.
+3. Print column 1 (IPs in Apache format) → sort lexically (required for `uniq`) → count consecutive duplicates → sort by count descending → top N. Standard "histogram of column" pattern.
+4. Stream line-by-line with `awk`. Don't load the file into a variable. Counters scale with cardinality (number of unique IPs), not line count, so they're bounded.
+5. Add an array for users `users[$3]++` (assuming user is column 3), increment in the loop, and add a loop in the `END` block to print it out.
+6. `-E` is ERE (Extended Regex) — POSIX standard, no `\d`, no lookarounds. `-P` is PCRE — Perl-compatible, supports `\d`, `\b`, lookahead/lookbehind, but is non-portable (not on all systems, slower). Use `-E` by default; reach for `-P` when you need PCRE features.
+7. Real production: query the centralized log store (CloudWatch Logs Insights: `stats count() by clientIp | filter @timestamp > ago(1h) | sort count() desc`). If you must do it on box: `awk -v cutoff="$(date -u -d '1 hour ago' +%s)" '...'` is fragile; better to ship logs somewhere queryable.
+8. Currently it counts and continues. Should: log a sample of malformed lines (with line number) for debugging, expose a malformed counter to monitoring, fail loud if malformed > some threshold (could indicate format change upstream).
+9. For a static-but-rotating file: track inode; if it changed, file rotated, reopen. For tailing: use `tail -F` (capital F follows by name across rotations). For production: agents like Vector / Fluent Bit / CloudWatch Agent handle this correctly.
+10. "For a simple aggregation task like this, `awk` is highly optimized and often faster than Python for single-pass file reading. However, if the log format was complex (like JSON), or I needed to join data against a database, or the script needed to be maintained by a larger team, I would choose Python for its readability, libraries, and ease of testing."
 
 </details>
 
-### Behavioral (45 min) — Story #7: Deliver Results
+### 🤝 Behavioral (45 min) — Story #7: Deliver Results
 
 End-of-week-one LP: **Deliver Results**. Story prompt:
 
 > "Tell me about a project that ran into serious obstacles. How did you push through and deliver?"
 
-Deliver Results stories work when they show:
+> [!TIP]
+> Deliver Results stories work when they show:
+> - A meaningful goal with a real deadline or stake.
+> - An obstacle that was not trivial — you had to do something different.
+> - *You* (not the team in general) made specific choices that drove the outcome.
+> - A measurable result, ideally with magnitude (% improvement, $ saved, hours reduced).
 
-- A meaningful goal with a real deadline or stake.
-- An obstacle that was not trivial — you had to do something different.
-- *You* (not the team in general) made specific choices that drove the outcome.
-- A measurable result, ideally with magnitude (% improvement, $ saved, hours reduced).
-
-Avoid: "we worked hard and shipped on time." Deliver Results requires *adversity*. The strongest stories have a moment of "this might fail" and the specific decision you made that turned it around.
+Avoid: "We worked hard and shipped on time." Deliver Results requires *adversity*. The strongest stories have a moment of "this might fail" and the specific decision you made that turned it around.
 
 STAR. 2-3 minutes. Out loud. Time it.
 
