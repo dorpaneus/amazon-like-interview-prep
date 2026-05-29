@@ -1,12 +1,13 @@
-# Day 14 — Light Review & Rest (Mon May 11)
+# 🧘 Day 14 — Light Review & Rest
 
-Today's job is **not to learn anything new**. Two solid weeks of work are behind you. Today is consolidation, logistics, and rest. The single biggest mistake at this stage is over-rehearsing into staleness.
-
-The whole day should be **~3 hours of low-intensity activity**, then stop. Trust the prep.
+> [!NOTE]
+> **The Goal:** Today's job is **not to learn anything new**. Two solid weeks of work are behind you. Today is consolidation, logistics, and rest. The single biggest mistake at this stage is over-rehearsing into staleness.
+> 
+> The whole day should be **~3 hours of low-intensity activity**, then stop. Trust the prep.
 
 ---
 
-## Morning — low-intensity review (90–120 min)
+## 🧠 Morning — low-intensity review (90–120 min)
 
 Pick a quiet spot. Coffee. No labs, no new material, no terminals.
 
@@ -23,29 +24,37 @@ Skim, don't study. You're refreshing, not learning:
 
 These are the "memorized openers" — the moments where having a smooth, prepared answer reads as senior. Practice each one **once** out loud, slowly. Not for memorization — for warm-up.
 
-**"What happens when I load a website?"**
-URL parse → DNS resolution (browser → OS → resolver → recursive walk) → ARP for next hop → TCP three-way handshake → TLS handshake with SNI and cert validation → HTTP request → server processing → response → browser parses, fetches subresources, renders.
+> [!TIP]
+> **"What happens when I load a website?"**
+> URL parse → DNS resolution (browser → OS → resolver → recursive walk) → ARP for next hop → TCP three-way handshake → TLS handshake with SNI and cert validation → HTTP request → server processing → response → browser parses, fetches subresources, renders.
 
-**The USE method opener** for any performance question:
-"I'd start with the USE method — Utilization, Saturation, Errors for each resource. Concretely, `vmstat 1`, `mpstat -P ALL 1`, `iostat -xz 1`, `sar -n DEV 1`, and `free -m` as my first sweep."
+> [!TIP]
+> **The USE method opener** for any performance question:
+> *"I'd start with the USE method — Utilization, Saturation, Errors for each resource. Concretely, `vmstat 1`, `mpstat -P ALL 1`, `iostat -xz 1`, `sar -n DEV 1`, and `free -m` as my first sweep."*
 
-**The hung-process answer**:
-"`sudo strace -p <pid>`. The syscall it's blocked in tells me what it's waiting on. `futex_wait` → userspace lock contention. `read` on a socket → I/O / peer issue. `poll`/`epoll_wait` → idle event loop. If no syscall activity, it's spinning in userspace — switch to `perf top -p` or `gdb -p` with `bt`."
+> [!TIP]
+> **The hung-process answer**:
+> *"`sudo strace -p <pid>`. The syscall it's blocked in tells me what it's waiting on. `futex_wait` → userspace lock contention. `read` on a socket → I/O / peer issue. `poll`/`epoll_wait` → idle event loop. If no syscall activity, it's spinning in userspace — switch to `perf top -p` or `gdb -p` with `bt`."*
 
-**The OOM answer**:
-"`dmesg -T | grep -i oom-kill` for the kernel log — it prints which process was killed, current meminfo, and the process list. Investigate: is RSS legitimate or a leak? Is the system right-sized? If essential, raise instance size or use cgroup limits. If a leak, fix the app. Protect critical processes with `oom_score_adj=-1000`."
+> [!TIP]
+> **The OOM answer**:
+> *"`dmesg -T | grep -i oom-kill` for the kernel log — it prints which process was killed, current meminfo, and the process list. Investigate: is RSS legitimate or a leak? Is the system right-sized? If essential, raise instance size or use cgroup limits. If a leak, fix the app. Protect critical processes with `oom_score_adj=-1000`."*
 
-**The `rd.break` root recovery**:
-Reboot → GRUB → press `e` → append `rd.break enforcing=0` → Ctrl-x → in initramfs shell: `mount -o remount,rw /sysroot` → `chroot /sysroot` → `passwd root` → `touch /.autorelabel` → exit, exit. SELinux relabels on next boot.
+> [!TIP]
+> **The `rd.break` root recovery**:
+> Reboot → GRUB → press `e` → append `rd.break enforcing=0` → Ctrl-x → in initramfs shell: `mount -o remount,rw /sysroot` → `chroot /sysroot` → `passwd root` → `touch /.autorelabel` → exit, exit. SELinux relabels on next boot.
 
-**The LVM recovery**:
-"`vgcfgbackup` archives are in `/etc/lvm/archive/`. Recovery: `pvcreate --uuid <original-UUID> --restorefile <archive> /dev/sdX`, then `vgcfgrestore <vg>`, then `vgchange -ay <vg>`."
+> [!TIP]
+> **The LVM recovery**:
+> *"`vgcfgbackup` archives are in `/etc/lvm/archive/`. Recovery: `pvcreate --uuid <original-UUID> --restorefile <archive> /dev/sdX`, then `vgcfgrestore <vg>`, then `vgchange -ay <vg>`."*
 
-**The RPM database recovery**:
-"Back up `/var/lib/rpm`, remove `__db.*` indexes, `rpm --rebuilddb`. Then `dnf check` to verify consistency."
+> [!TIP]
+> **The RPM database recovery**:
+> *"Back up `/var/lib/rpm`, remove `__db.*` indexes, `rpm --rebuilddb`. Then `dnf check` to verify consistency."*
 
-**The BDP calculation**:
-"BDP = bandwidth × RTT. For 10 Gbps × 100 ms: 10⁹ × 0.1 / 8 = 125 MB. So I'd set `net.core.rmem_max`/`wmem_max` to at least 128 MB, the `tcp_rmem`/`tcp_wmem` max values to match, and verify window scaling is on."
+> [!TIP]
+> **The BDP calculation**:
+> *"BDP = bandwidth × RTT. For 10 Gbps × 100 ms: 10⁹ × 0.1 / 8 = 125 MB. So I'd set `net.core.rmem_max`/`wmem_max` to at least 128 MB, the `tcp_rmem`/`tcp_wmem` max values to match, and verify window scaling is on."*
 
 That's it. Don't add more. **Don't drill these to perfection** — they should sound conversational, not memorized.
 
@@ -55,39 +64,39 @@ If a specific behavioral story still feels uneven, read it once, then recite onc
 
 ---
 
-## Midday — logistics & setup (45 min)
+## 📝 Midday — logistics & setup (45 min)
 
 This is the part of the day where you actually accomplish something tangible. Boring but important.
 
 ### Interview logistics
 
-- [ ] Time confirmed — including time zone, especially if remote with interviewers across regions
-- [ ] Link tested (Zoom / Chime / whatever they're using) — open it once, verify it loads
-- [ ] Calendar invites accepted; reminders set
-- [ ] Names of interviewers if you have them — quick LinkedIn glance for context (don't memorize bios)
-- [ ] Recruiter's phone number saved — in case of tech issues
+- [ ] Time confirmed — including time zone, especially if remote with interviewers across regions.
+- [ ] Link tested (Zoom / Chime / whatever they're using) — open it once, verify it loads.
+- [ ] Calendar invites accepted; reminders set.
+- [ ] Names of interviewers if you have them — quick LinkedIn glance for context (don't memorize bios).
+- [ ] Recruiter's phone number saved — in case of tech issues.
 
 ### If remote (most likely)
 
-- [ ] Audio: headphones tested, mic tested, no echo
-- [ ] Video: camera angle decent, eye-level if possible, well-lit (face toward window or lamp)
-- [ ] Background: tidy or use a neutral virtual background — but if you use one, test it doesn't ghost your edges
-- [ ] Connection: wired ethernet if possible, otherwise verify wifi strength
-- [ ] Phone: silenced, but reachable for the recruiter
-- [ ] Browser: close everything not needed; pin only the interview tab; clear notifications
-- [ ] Power: laptop plugged in, full battery
-- [ ] Water bottle: filled, lid on, within reach
-- [ ] Notepad and pen: physical, not on the screen — for jotting interviewer names or numbers
-- [ ] Snack within reach in case of breaks
+- [ ] Audio: headphones tested, mic tested, no echo.
+- [ ] Video: camera angle decent, eye-level if possible, well-lit (face toward window or lamp).
+- [ ] Background: tidy or use a neutral virtual background — but if you use one, test it doesn't ghost your edges.
+- [ ] Connection: wired ethernet if possible, otherwise verify wifi strength.
+- [ ] Phone: silenced, but reachable for the recruiter.
+- [ ] Browser: close everything not needed; pin only the interview tab; clear notifications.
+- [ ] Power: laptop plugged in, full battery.
+- [ ] Water bottle: filled, lid on, within reach.
+- [ ] Notepad and pen: physical, not on the screen — for jotting interviewer names or numbers.
+- [ ] Snack within reach in case of breaks.
 
 ### If onsite
 
-- [ ] Route checked, transit time + buffer
-- [ ] What to wear laid out (business casual is the safe default for AWS — neat but not formal)
-- [ ] ID / badge if needed for office access
-- [ ] Printed copy of your resume (some interviewers like a hard copy reference)
-- [ ] Water bottle, snacks in bag
-- [ ] Phone charged
+- [ ] Route checked, transit time + buffer.
+- [ ] What to wear laid out (business casual is the safe default for AWS — neat but not formal).
+- [ ] ID / badge if needed for office access.
+- [ ] Printed copy of your resume (some interviewers like a hard copy reference).
+- [ ] Water bottle, snacks in bag.
+- [ ] Phone charged.
 
 ### One last review
 
@@ -98,7 +107,7 @@ That's it. **Close the laptop.**
 
 ---
 
-## Afternoon & evening — actively stop
+## 🛋️ Afternoon & evening — actively stop
 
 This is the hardest part for most prepared candidates. Doing more does not help now. **Recovery does.**
 
@@ -111,7 +120,7 @@ This is the hardest part for most prepared candidates. Doing more does not help 
 
 ---
 
-## Tuesday morning (interview day)
+## 🚀 Tuesday morning (Interview Day)
 
 ### The morning ritual
 
@@ -146,7 +155,7 @@ A short list to keep in your head — not to recite, just to hold:
 
 ---
 
-## The panic checklist
+## 🚨 The panic checklist
 
 If you wake up Tuesday morning and feel suddenly unprepared on some specific thing — *do not* try to learn it. Instead:
 
@@ -157,7 +166,7 @@ If you wake up Tuesday morning and feel suddenly unprepared on some specific thi
 
 ---
 
-## Final note
+## 🏆 Final note
 
 You've done two full weeks of focused, structured prep. Your story bank is built. You have memorized openers for every high-frequency interview scenario. You understand the storage stack, the boot chain, TCP/IP, the USE method, eBPF tooling, SELinux, and how to recover an RPM database. You've practiced the live-coding scenario.
 
