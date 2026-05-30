@@ -7,9 +7,9 @@
 
 ---
 
-## 🧠 Morning Block (3h) — The model and the protocols
+## 🧠 Morning Block — The model and the protocols
 
-### 5A. The OSI/TCP-IP model — keep it useful (30 min)
+### 5a. The OSI/TCP-IP model — keep it useful
 
 Don't recite all 7 OSI layers; nobody uses them in practice. The **practical model** is 5 layers:
 
@@ -24,7 +24,7 @@ Don't recite all 7 OSI layers; nobody uses them in practice. The **practical mod
 > [!TIP]
 > **The Golden Rule:** When debugging, **work bottom-up**. Layer 1 broken → nothing above works. Don't waste time checking DNS if the cable is unplugged.
 
-### 5B. The IP layer — addressing and routing (45 min)
+### 5b. The IP layer — addressing and routing (45 min)
 
 **IPv4 addressing**:
 - 32 bits, written as 4 octets: `10.0.5.42`
@@ -51,7 +51,7 @@ Don't recite all 7 OSI layers; nobody uses them in practice. The **practical mod
 > * **Network ACLs (NACLs):** Stateless, operate at the Subnet level. If you allow inbound port 80, you *must* explicitly allow the ephemeral ports (32768-60999) outbound, or the return traffic is dropped.
 > * **Default Route:** In an AWS public subnet, the default route (`0.0.0.0/0`) points to an Internet Gateway (IGW). In a private subnet, it points to a NAT Gateway.
 
-### 5C. TCP and UDP — the transport layer (1h)
+### 5c. TCP and UDP — the transport layer
 
 **TCP** — reliable, ordered, connection-oriented. **UDP** — best-effort, connectionless, no ordering. Both use **port numbers** (16-bit) for multiplexing.
 
@@ -80,7 +80,7 @@ Then teardown with FIN/ACK in each direction (4 packets, since each side closes 
 
 **Ephemeral port exhaustion**: Outbound connections pick a source port from `net.ipv4.ip_local_port_range` (default `32768-60999` ≈ 28k ports). Lots of short-lived outbound connections + TIME-WAIT can exhaust this. Symptoms: "Cannot assign requested address." Mitigations: `tcp_tw_reuse`, longer-lived connections, more source IPs.
 
-### 5D. DNS — the resolution dance (45 min)
+### 5d. DNS — the resolution dance
 
 **Resolution path** when a host looks up `www.example.com`:
 1. **Browser cache** — recent lookups (~minutes).
@@ -95,7 +95,7 @@ Then teardown with FIN/ACK in each direction (4 packets, since each side closes 
 > [!TIP]
 > **TTLs matter:** When a record is updated, every cache between you and the authoritative still serves the old value until its TTL expires. This is why DNS changes "take time to propagate."
 
-### 5E. DHCP — DORA (15 min)
+### 5e. DHCP — DORA
 
 The four-message exchange — UDP ports 67 (server) and 68 (client):
 1. **Discover** — client broadcasts (`0.0.0.0` → `255.255.255.255`): "anyone got an IP for me?" Includes client MAC.
@@ -103,7 +103,7 @@ The four-message exchange — UDP ports 67 (server) and 68 (client):
 3. **Request** — client broadcasts which offer it accepts (broadcast so other servers see the choice and retract their offers).
 4. **Acknowledge** — chosen server confirms; client configures the interface.
 
-### 5F. The big walkthrough — "what happens when I load a website" (45 min)
+### 5f. The big walkthrough — "what happens when I load a website"
 
 End-to-end. Practice this until it's smooth. Each numbered step is a place an interviewer might say "wait, dive deeper on that."
 
@@ -125,9 +125,9 @@ End-to-end. Practice this until it's smooth. Each numbered step is a place an in
 
 ---
 
-## 💻 Midday Block (2.5h) — Hands-on labs
+## 💻 Midday Block — Hands-on labs
 
-### Lab 1: Inspect the local network stack (30 min)
+### Lab 1: Inspect the local network stack
 
 ```bash
 ip addr                              # interfaces and IPs
@@ -146,7 +146,7 @@ dig +trace google.com                # show the recursive walk yourself
 dig -x 8.8.8.8                       # reverse lookup
 ```
 
-### Lab 2: TCP states and `ss` (30 min)
+### Lab 2: TCP states and `ss`
 
 ```bash
 # Listening sockets
@@ -167,7 +167,7 @@ sudo tcpdump -nni any 'tcp port 443' -c 20
 curl -s https://www.google.com -o /dev/null
 ```
 
-### Lab 3: Building HTTP requests by hand (30 min)
+### Lab 3: Building HTTP requests by hand
 
 ```bash
 # Plain HTTP with nc — see the raw request/response
@@ -194,7 +194,7 @@ dns:%{time_namelookup}s connect:%{time_connect}s tls:%{time_appconnect}s ttfb:%{
 ' -s -o /dev/null https://www.google.com
 ```
 
-### Lab 4: tcpdump for the canonical scenarios (30 min)
+### Lab 4: tcpdump for the canonical scenarios
 
 ```bash
 # DNS queries from this host
@@ -214,9 +214,9 @@ sudo tcpdump -nni any port 53 -c 20
 
 ---
 
-## 🎯 Afternoon Block (1.5h) — Drills + Story #5
+## 🎯 Afternoon Block — Drills + Story #5
 
-### Self-check (45 min)
+### Self-check
 
 1. Walk me through what happens when I type `https://www.amazon.com` and press Enter.
 2. Three-way handshake — packet by packet, what's in each one?
@@ -249,7 +249,7 @@ sudo tcpdump -nni any port 53 -c 20
 
 </details>
 
-### 🤝 Behavioral (45 min) — Story #5: Customer Obsession
+### 🤝 Behavioral — Story #5: Customer Obsession
 
 Today's LP: **Customer Obsession**.
 
