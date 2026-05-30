@@ -10,20 +10,32 @@
 
 ---
 
-## 🧠 Morning Block (1h) — The Unix file model
+## 🧠 Morning Block — The Unix file model
 
 ### 1A. Everything is a file
 
-Mental model: a Linux file is **two things glued together**:
+# Understanding Linux File Systems: Inodes and Directory Entries
 
-1. An **inode** — metadata + pointers to data blocks (owner, perms, size, timestamps, link count, block list).
-2. A **directory entry** — a `(name, inode_number)` pair living inside a directory.
+## The Core Mental Model
+In Linux, what we typically think of as a "file" is actually two distinct components tied together. The name you see is just a label; the actual file is the underlying data structure. 
 
-The "file" you see is just a name. The actual file is the inode. This is why:
+1. **The Inode (Index Node):** This is the true representation of the file. It contains the metadata and the physical pointers to the actual data blocks on the disk. An inode stores:
+    * Ownership (User and Group)
+    * Permissions (Read, Write, Execute)
+    * File Size
+    * Timestamps (Creation, Modification, Access)
+    * Link Count (How many names point to this specific inode)
+    * Block List (The disk addresses of the actual data)
+    
+2. **The Directory Entry:** This is the human-readable part. It is simply a mapping that pairs a `filename` with an `inode_number`. These entries live inside directories.
 
-- A hard link is just another directory entry pointing to the same inode — no data copy.
-- `rm` doesn't delete data — it removes one directory entry and decrements link count; data is freed only when count hits 0 *and* no process has the file open.
-- You can't hard-link across filesystems — inode numbers are filesystem-local.
+## Key Implications of this Model
+
+Understanding the separation between names and inodes explains several core Linux behaviors:
+
+* **Hard Links:** Creating a hard link does not copy the file's data. It simply creates a new directory entry (a new name) that points to the *exact same inode*.
+* **File Deletion (`rm`):** Running the `rm` command does not instantly erase data from the disk. Instead, it "unlinks" the file by removing the directory entry and decrementing the inode's link count. The actual data blocks are only freed by the system when the link count hits `0` **and** no active processes are currently holding the file open.
+* **Filesystem Boundaries:** You cannot create a hard link across different filesystems or partitions. Because inode numbers are generated independently by each filesystem, they are only unique and valid locally.
 
 **File types** (first char in `ls -l`):
 
