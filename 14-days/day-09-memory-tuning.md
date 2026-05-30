@@ -83,10 +83,11 @@ Linux allows processes to allocate more virtual memory than physically available
 - `1` — **always overcommit**. Never refuse `malloc()`. OOM killer becomes more important. HPC/ML with huge sparse allocations.
 - `2` — **strict** accounting. Total committed memory cannot exceed `swap + overcommit_ratio% of RAM`. `malloc()` returns NULL when limit would be exceeded.
 
-**The OOM killer** — when physical memory is exhausted and reclaim can't free anything, the kernel kills processes. Selection scores each process based on:
-- RSS (bigger = more likely)
-- Time running (newer = more likely)
-- `oom_score_adj` (operator override: `-1000` "never kill" to `+1000`)
+**The OOM killer** — when physical memory is exhausted and reclaim can't free anything, the kernel kills processes. The `oom_badness()` score (0–1000) for each process is driven by:
+- **Memory footprint** — RSS + swap + page-table pages, as a fraction of available memory (bigger = more likely). This dominates the score.
+- **`oom_score_adj`** — the operator override (`-1000` "never kill" to `+1000`), added on top.
+
+(Older kernels also weighted run time and niceness; modern `oom_badness()` does not — it's essentially memory footprint plus the adjustment.)
 
 ```bash
 cat /proc/[pid]/oom_score          # 0–1000, higher = more likely killed
@@ -95,6 +96,9 @@ cat /proc/[pid]/oom_score_adj      # operator adjustment (-1000 to +1000)
 
 > [!CAUTION]
 > **Protecting critical processes:** You can echo `-1000` to a PID's `oom_score_adj`. **However**, if you protect a rogue memory-leaking app, the OOM killer will move down the list and kill innocent bystanders like `sshd`, locking you out of the server completely. 
+
+> [!IMPORTANT]
+> **System-wide OOM vs cgroup OOM — the one you'll actually meet in the cloud:** Everything above is the *system-wide* OOM killer (the whole host ran out of RAM). In containers it's almost always the **per-cgroup memory limit** instead: when a cgroup exceeds its `memory.max` (cgroup v2) / `memory.limit_in_bytes` (v1), the kernel runs OOM *scoped to that group only* — killing a task even though the host has gigabytes free. That's exactly what an ECS task's `OOMKilled` (or a Kubernetes `OOMKilled`) is; cgroups are the kernel primitive from Day 2 §2c. Confirm via the `oom_kill` counter in the cgroup's `memory.events`, and `dmesg`/`journalctl -k` will name the offending cgroup.
 
 > [!IMPORTANT]
 > **☁️ The AWS Bridge: CloudWatch Blind Spots**
@@ -330,6 +334,7 @@ rm /tmp/bigfile
 10. NUMA — how do you tell if your workload is suffering from cross-node access?
 11. How do you find per-process swap usage?
 12. `Slab` is growing without bound in `/proc/meminfo`. What's happening and how do you investigate?
+13. An ECS task shows `OOMKilled` but the EC2 host has gigabytes of free RAM. Reconcile.
 
 <details>
 <summary><strong>Answers</strong> (click to reveal)</summary>
@@ -346,6 +351,7 @@ rm /tmp/bigfile
 10. `numastat` — look at `numa_miss`, `numa_foreign`, `other_node` counters. Per-process: `numastat -p <pid>`. High values for an unpinned process = workload running cross-node. Pin with `numactl --cpunodebind --membind`.
 11. Walk `/proc/[pid]/status` for `VmSwap`. Lab 1 has the one-liner. Or `smem -t -k -s swap`.
 12. Likely dentry/inode cache growth. `slabtop` to see which slab is biggest (often `dentry`). Mitigate: raise `vm.vfs_cache_pressure` (counterintuitively higher = reclaim these caches *more aggressively*), or `echo 2 > /proc/sys/vm/drop_caches` for emergency relief (don't do this blindly in production).
+13. The task hit its **cgroup** memory limit, not the host's. The kernel runs OOM scoped to that cgroup (`memory.max` in cgroup v2) and kills a process inside it regardless of host-level free memory — the cgroup primitive from Day 2 §2c. Confirm with the `oom_kill` counter in the cgroup's `memory.events` and `dmesg`/`journalctl -k`. Fix is to raise the task's memory limit or fix the leak — adding host RAM does nothing.
 
 </details>
 
