@@ -1,4 +1,4 @@
-# 📜 Day 7 — Scripting and Log Parsing
+# 📜 Day 7 - Scripting and Log Parsing
 
 > [!NOTE]
 > **The Goal:** End of week one. Today is the **live-coding day**. The reported question — "extract IPs and error codes from log files" — is the most likely live-coding scenario for this role. We'll write that code, but the real skill is **what you say while you type**: narrating tradeoffs, asking clarifying questions, recognizing when the toy answer is wrong for production scale.
