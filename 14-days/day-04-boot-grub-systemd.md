@@ -7,9 +7,9 @@
 
 ---
 
-## 🧠 Morning Block (3h) — From firmware to login
+## 🧠 Morning Block — From firmware to login
 
-### 4A. The boot sequence (1h)
+### 4a. The boot sequence
 
 End-to-end:
 
@@ -35,7 +35,7 @@ End-to-end:
 | **Service fails to start** | Boots but `multi-user` not reached | `systemctl --failed` + journal |
 | **Forgot root password** | Can't log in as root | `rd.break` from GRUB |
 
-### 4B. GRUB2 — config, edits, recovery (45 min)
+### 4b. GRUB2 — config, edits, recovery
 
 **Config files** (RHEL/Fedora):
 - `/etc/default/grub` — high-level settings (`GRUB_TIMEOUT`, `GRUB_CMDLINE_LINUX`, etc.). **You edit this.**
@@ -57,7 +57,7 @@ grub2-mkconfig -o /boot/efi/EFI/redhat/grub.cfg        # UEFI on RHEL
 - `init=/bin/bash` — skip systemd entirely (very minimal)
 - `selinux=0` — disable SELinux for one boot if you suspect SELinux is blocking
 
-### 4C. Regaining root — the canonical procedure (45 min)
+### 4c. Regaining root — the canonical procedure
 
 This is **the** boot-recovery interview question. Multiple methods; know `rd.break` cold.
 
@@ -89,7 +89,7 @@ touch /.autorelabel              # full relabel on next boot (slow, safe)
 > 5. Chroot into the mounted volume and fix the issue (e.g., reset `passwd`, fix `fstab`, or fix `sshd_config`).
 > 6. Unmount, detach, reattach to the original instance, and start it.
 
-### 4D. systemd basics (1h 15min)
+### 4d. systemd basics
 
 systemd is **PID 1** + a unit-based service manager. The mental model: every service, mount, device, target, timer, and socket is a **unit**. Units have **dependencies**, **states**, and a place in **targets** (groups of units).
 
@@ -124,7 +124,7 @@ journalctl -p err                  # priority err and above (alert/crit/err)
 journalctl -k                      # kernel messages (≈ dmesg; see 4F)
 ```
 
-### 4E. Kernel modules (20 min)
+### 4e. Kernel modules
 
 The kernel doesn't compile in a driver for every possible device — it loads **modules** (`.ko` files) on demand. This keeps the kernel small and lets it support hardware it wasn't built knowing about. The initramfs (4A) bundles just the modules needed to reach the root filesystem; once systemd is up, **udev auto-loads** the rest as devices are detected.
 
@@ -185,7 +185,7 @@ What surfaces here, and which day it ties to:
 > [!TIP]
 > **Interview hook — "where do you look first for a hardware or driver problem?"** → `dmesg` / `journalctl -k`. It's the kernel's own voice; everything userspace (logs, metrics) is downstream of it.
 
-### 4G. Do I need to reboot? — running vs installed kernel (15 min)
+### 4g. Do I need to reboot? — running vs installed kernel
 
 After patching, the box keeps running the *old* kernel until it reboots. The universal check is to compare the running kernel against the newest one on disk:
 
@@ -203,9 +203,9 @@ lsof +c0 | grep -w DEL      # processes mapped to deleted (replaced) libraries
 
 ---
 
-## 💻 Midday Block (2.5h) — Hands-on labs
+## 💻 Midday Block — Hands-on labs
 
-### Lab 1: Map your boot (30 min)
+### Lab 1: Map your boot
 
 ```bash
 systemd-analyze
@@ -225,7 +225,7 @@ journalctl -b | head -100         # the early boot lines
 > [!TIP]
 > **Predict before reading:** Which service is the slowest? Is it on the critical path? (Slow != critical-path; a slow background service that nothing waits on doesn't extend boot time.)
 
-### Lab 2: Modules & the kernel log (25 min)
+### Lab 2: Modules & the kernel log
 
 ```bash
 # What's loaded, and the details on one module
@@ -253,7 +253,7 @@ sudo modprobe -r dummy            # unload
 > [!TIP]
 > **Predict before reading:** before running `dmesg`, guess what the last few lines will be (a USB event? a network link change? nothing since boot?). On a server they're often silent — which is itself the signal that "nothing kernel-level is wrong." Then practice the interview reflex: hardware/driver problem → `dmesg`/`journalctl -k` *first*.
 
-### Lab 3: Custom service (45 min)
+### Lab 3: Custom service
 
 Create a real systemd service to internalize the unit format:
 
@@ -308,7 +308,7 @@ sudo systemctl edit heartbeat
 sudo systemctl cat heartbeat          # see the drop-in below the original
 ```
 
-### Lab 4: The fstab trap (20 min)
+### Lab 4: The fstab trap
 
 The classic boot-breaker. **Take a snapshot of your VM first.**
 
@@ -335,7 +335,7 @@ sudo systemctl daemon-reload
 > [!WARNING]
 > **The Interview Answer:** A broken fstab drops the system into emergency mode. Always use `nofail` on optional mounts (like external EBS data volumes). **Always run `mount -a` after editing fstab** — never `reboot && hope`.
 
-### Lab 5: The `rd.break` rescue (40 min)
+### Lab 5: The `rd.break` rescue
 
 This is the headline lab. You're going to "lose" the root password and recover it.
 
@@ -358,7 +358,7 @@ exit
 > [!CAUTION]
 > **If you get locked out** because you skipped the `.autorelabel` step: SELinux blocks login because `/etc/shadow` has the wrong context. Boot back into `rd.break` and `touch /.autorelabel` correctly.
 
-### Lab 6: Boot to emergency vs rescue, manually (20 min)
+### Lab 6: Boot to emergency vs rescue, manually
 
 ```bash
 # Switch to rescue from a running system (will drop you to a single-user prompt)
@@ -370,7 +370,7 @@ sudo systemctl emergency               # only / mounted ro, nothing else
 # Press Ctrl-D or systemctl default to come back
 ```
 
-### Lab 7: Is a reboot pending? (20 min)
+### Lab 7: Is a reboot pending?
 
 ```bash
 # Before: record the running kernel
@@ -390,9 +390,9 @@ sudo lsof +c0 | grep -w DEL | awk '{print $1}' | sort -u
 
 ---
 
-## 🎯 Afternoon Block (1.5h) — Drills + Story #4
+## 🎯 Afternoon Block — Drills + Story #4
 
-### Self-check (45 min)
+### Self-check
 
 1. Walk me through every step from power button to shell prompt.
 2. What's in the initramfs and why is it needed?
@@ -427,7 +427,7 @@ sudo lsof +c0 | grep -w DEL | awk '{print $1}' | sort -u
 
 </details>
 
-### 🤝 Behavioral (45 min) — Story #4: Bias for Action
+### 🤝 Behavioral — Story #4: Bias for Action
 
 Today's LP: **Bias for Action**
 
