@@ -437,19 +437,41 @@ chmod +x parselog.sh
 Take your script. Generate a bigger log (1M lines):
 
 ```bash
-python3 - <<'EOF' > big.log
-import random, datetime
-random.seed(1)
-ips=['10.0.5.42','10.0.5.43','192.168.1.5','172.16.0.10','203.0.113.7']
-methods=['GET']*8+['POST']*2
-paths=['/','/api/users','/api/orders','/login','/health']
-statuses=[200]*70+[301]*5+[404]*15+[500]*8+[503]*2
-start=datetime.datetime(2026,5,1)
-with open('big.log','w') as f:
-    for i in range(1_000_000):
-        ts=(start+datetime.timedelta(seconds=i)).strftime('%d/%b/%Y:%H:%M:%S +0000')
-        f.write(f'{random.choice(ips)} - - [{ts}] "{random.choice(methods)} {random.choice(paths)} HTTP/1.1" {random.choice(statuses)} {random.randint(100,9000)} "-" "Mozilla/5.0"\n')
-EOF
+# Generate the 1M line log entirely in bash
+{
+   RANDOM=1
+  
+  ips=('10.0.5.42' '10.0.5.43' '192.168.1.5' '172.16.0.10' '203.0.113.7')
+  paths=('/' '/api/users' '/api/orders' '/login' '/health')
+  
+  # Start date: May 1, 2026
+  epoch=$(date -u -d "2026-05-01 00:00:00" +%s)
+  
+  for ((i=0; i<1000000; i++)); do
+    ip=${ips[RANDOM % 5]}
+    p=${paths[RANDOM % 5]}
+    
+    # 80% GET, 20% POST
+    (( RANDOM % 10 < 8 )) && m="GET" || m="POST"
+    
+    # Statuses: 70% 200, 5% 301, 15% 404, 8% 500, 2% 503
+    rand_status=$((RANDOM % 100))
+    if (( rand_status < 70 )); then s=200
+    elif (( rand_status < 75 )); then s=301
+    elif (( rand_status < 90 )); then s=404
+    elif (( rand_status < 98 )); then s=500
+    else s=503; fi
+    
+    # Print directly, allowing printf to format the timestamp from the epoch on the fly
+    # Note: Since sizes were omitted in the Python array for this lab, we use a dash (-)
+    printf '%s - - [%(%d/%b/%Y:%H:%M:%S +0000)T] "%s %s HTTP/1.1" %s -\n' \
+      "$ip" "$epoch" "$m" "$p" "$s"
+      
+    # Increment time by 1 second (matches timedelta(seconds=i))
+    ((epoch++))
+  done
+} > big.log
+
 ls -lh big.log
 time ./parselog.sh big.log >/dev/null
 ```
