@@ -11,11 +11,11 @@ This repository contains everything required to pass a heavy infrastructure and 
 
 ## ⏱️ Daily Structure (~3 hours)
 
-| Block | Duration | Focus |
-| :--- | :--- | :--- |
-| **🌅 Morning** | ~1h | **Concepts + Reading.** New material lands here while you're fresh. |
-| **💻 Midday** | ~1.5h | **Hands-on Labs.** Run commands, break things, observe. |
-| **🎯 Afternoon** | ~0.5h | **Drills + Behavioral.** Past-question repetition, one LP/STAR story per day. |
+| Block | Focus |
+| :--- | :--- |
+| **🌅 Morning** | **Concepts + Reading.** New material lands here while you're fresh. |
+| **💻 Midday** | **Hands-on Labs.** Run commands, break things, observe. |
+| **🎯 Afternoon** | **Drills + Behavioral.** Past-question repetition, one LP/STAR story per day. |
 
 > [!TIP]
 > **Standard Topic Flow:** 
