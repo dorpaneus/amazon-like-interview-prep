@@ -25,7 +25,7 @@ The decision tree:
 
 ### 11B. strace — system calls (45 min)
 
-`strace` shows every system call a process makes, with arguments and return values. It's the "talk to me, what are you doing" tool.
+`strace` shows every system call a process makes, with arguments and return values. It's the "talk to me, what are you doing" tool. Each line is one crossing of the user↔kernel boundary from Day 2 §2a — the syscall "door" being knocked on.
 
 ```bash
 sudo strace -p 12345                      # Attach to a running PID
@@ -135,7 +135,7 @@ Look for `IPC` (instructions per cycle). `> 1` is good, `< 0.5` suggests stalls.
 
 ### 11F. eBPF and bcc tools (40 min)
 
-eBPF is the modern replacement for SystemTap. You can run sandboxed programs inside the kernel that hook tracepoints **with low overhead and no recompile**. 
+eBPF is the modern replacement for SystemTap. You can run sandboxed programs inside the kernel that hook tracepoints **with low overhead and no recompile**. This is the "how modern tools watch the kernel safely" idea from Day 2 §2a: the program runs *in kernel space*, so it observes everything without the per-syscall `ptrace` traps that make `strace` (11B) so heavy.
 
 **Install on RHEL/Fedora**:
 ```bash
@@ -312,6 +312,7 @@ sudo kill -SIGINT $BT_PID
 9. What does `offcputime` tell you that `perf top` doesn't?
 10. The JD specifically mentions `syscount` and `gethostlatency`. Walk me through what each does and when you'd use it.
 11. You want to know how often a specific kernel function is called over 30 seconds. What's the shortest command that gives you that?
+12. Mechanically, *why* is `strace` 10–100x slower than an in-kernel eBPF tool doing the same syscall counting? Tie it to the user/kernel boundary.
 
 <details>
 <summary><strong>Answers</strong> (click to reveal)</summary>
@@ -327,6 +328,7 @@ sudo kill -SIGINT $BT_PID
 9. `perf top` samples *on-CPU* time — only counts time the process is actively running. `offcputime` (bcc) samples *off-CPU* time — time blocked, sleeping, waiting on locks/I/O/scheduler. 
 10. `syscount`: counts syscalls system-wide or per-process. Use to see "which syscall is dominating". `gethostlatency`: measures DNS resolution time per request. Use when a service is slow and you suspect DNS.
 11. `sudo bpftrace -e 'kprobe:<func_name> { @ = count(); }'` and Ctrl-C after 30 seconds.
+12. `strace` uses `ptrace`, which stops the target on **both** the entry and exit of every syscall and hands control to the tracer. Each stop is a crossing of the user↔kernel boundary (Day 2 §2a) plus a context switch out to `strace` and back (Day 8) — so one traced syscall becomes several boundary crossings and switches. An eBPF program is attached to the syscall tracepoint and runs *inside kernel space*, aggregating into a kernel map; nothing traps out to userspace per event, so the per-syscall cost is tiny.
 
 </details>
 
