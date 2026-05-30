@@ -9,7 +9,7 @@
 
 ## 🧠 Morning Block — Tools and idioms
 
-### 7A. Choosing the right tool
+### 7a. Choosing the right tool
 
 The first thing to **say out loud** in a live-coding session: "What scale are we at?" The answer drives the tool.
 
@@ -26,7 +26,7 @@ The first thing to **say out loud** in a live-coding session: "What scale are we
 > 2. Solve the toy version cleanly.
 > 3. **Note that at production scale you wouldn't grep files** — logs would already be in CloudWatch Logs Insights / Athena / Elasticsearch, queryable by structured fields. The grep-the-file solution is for ad-hoc debugging on one box.
 
-### 7B. Bash hygiene
+### 7b. Bash hygiene
 
 Bash is everywhere in ops. Bad Bash silently corrupts things. **Five rules** to internalize:
 
@@ -88,7 +88,7 @@ fi
 - `(( arithmetic ))` — integer math, no `$` needed
 - `<()` and `>()` — process substitution; e.g. `diff <(cmd1) <(cmd2)`
 
-### 7C. The text toolkit — `grep`, `awk`, `sed`, `cut`, `sort`, `uniq`
+### 7c. The text toolkit — `grep`, `awk`, `sed`, `cut`, `sort`, `uniq`
 
 You should be able to write these one-liners cold.
 
@@ -151,7 +151,7 @@ awk '{print $1}' access.log | sort | uniq -c | sort -rn | head -10
 awk '{c[$1]++} END {for (k in c) print c[k], k}' access.log | sort -rn | head
 ```
 
-### 7D. Bash — patterns for live-coding
+### 7d. Bash — patterns for live-coding
 
 **The skeleton** for any "process a log file" question using `awk`:
 
@@ -236,7 +236,7 @@ END {
 - **Compressed logs** — `zcat` or `zgrep` to read on the fly.
 - **IPv6** — The simple regex won't match.
 
-### 7E. Regex essentials
+### 7e. Regex essentials
 
 The patterns you'll write under pressure:
 
