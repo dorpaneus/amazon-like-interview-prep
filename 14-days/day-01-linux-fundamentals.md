@@ -37,17 +37,20 @@ Understanding the separation between names and inodes explains several core Linu
 * **File Deletion (`rm`):** Running the `rm` command does not instantly erase data from the disk. Instead, it "unlinks" the file by removing the directory entry and decrementing the inode's link count. The actual data blocks are only freed by the system when the link count hits `0` **and** no active processes are currently holding the file open.
 * **Filesystem Boundaries:** You cannot create a hard link across different filesystems or partitions. Because inode numbers are generated independently by each filesystem, they are only unique and valid locally.
 
-**File types** (first char in `ls -l`):
+## Linux File Types Reference
 
-| Char | Type              |
-| ---- | ----------------- |
-| `-`  | regular file      |
-| `d`  | directory         |
-| `l`  | symbolic link     |
-| `b`  | block device      |
-| `c`  | character device  |
-| `p`  | named pipe (FIFO) |
-| `s`  | socket            |
+When you list files using the `ls -l` command, the very first character of the output string indicates the type of the file. 
+
+| Character | File Type | Common Use Case |
+| :---: | :--- | :--- |
+| `-` | **Regular File** | Standard data files (text files, images, scripts, compiled binaries). |
+| `d` | **Directory** | A "folder" that contains a list of directory entries. |
+| `l` | **Symbolic Link** | A soft link or shortcut that points to another file path (unlike a hard link which points to an inode). |
+| `b` | **Block Device** | Hardware devices that read and write data in defined blocks (e.g., hard drives, SSDs). |
+| `c` | **Character Device** | Devices that read and write data sequentially, character-by-character (e.g., keyboards, mice, terminals). |
+| `p` | **Named Pipe (FIFO)** | Used for advanced inter-process communication, allowing data to flow from one process to another. |
+| `s` | **Socket** | Used for network connections or local inter-process communication. |
+
 
 > [!IMPORTANT]
 > **☁️ The AWS Bridge: S3 vs. POSIX & EBS**
