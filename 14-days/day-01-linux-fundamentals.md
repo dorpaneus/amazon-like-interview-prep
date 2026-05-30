@@ -77,7 +77,7 @@ A single long-listing line packs **seven fields**, space-separated. Take this ex
 > [!TIP]
 > **Quick way to remember the order:** > perms → links → owner → group → size → time → name.
 
-### 1B. Permissions deep (1h 15min)
+### 1B. Permissions deep
 
 Octal cheat: `r=4, w=2, x=1`. So `755 = rwxr-xr-x`, `644 = rw-r--r--`, `600 = rw-------`.
 
@@ -120,7 +120,7 @@ ext4 has `crtime` (creation) in the inode, but POSIX `stat()` doesn't expose it 
 
 ---
 
-## 💻 Midday Block (2.5h) — Hands-on labs
+## 💻 Midday Block — Hands-on labs
 
 The goal isn't to type commands. It's to **predict the outcome before pressing <kbd>Enter</kbd>**, then verify.
 
@@ -142,7 +142,7 @@ ls -li        # -i adds inode number as first column
 > - Inode of the symlink — same as `foo.txt`? (No, symlink has its own inode.)
 > - Compare `stat foo-soft.txt` vs `stat -L foo-soft.txt`. The first describes the link itself; the second describes what it points to.
 
-### Lab 2: Permissions & special bits (45 min)
+### Lab 2: Permissions & special bits
 
 ```bash
 ls -l /usr/bin/passwd          # observe the s
@@ -209,7 +209,7 @@ sudo lsof +L1
 
 Finally, press <kbd>Ctrl</kbd> + <kbd>C</kbd> in Terminal 1 to kill the tail process. Run `df -h .` again and verify the space is freed!
 
-### Lab 4: Timestamps (30 min)
+### Lab 4: Timestamps
 
 ```bash
 touch t.txt
@@ -229,9 +229,9 @@ Predict which of atime/mtime/ctime changes before each command.
 
 ---
 
-## 🎯 Afternoon Block (1.5h) — Drills + first LP
+## 🎯 Afternoon Block — Drills + first LP
 
-### Self-check (45 min)
+### Self-check
 
 Answer out loud as if interviewing. Force structure — not "uh, the thing in column…". Answers folded below.
 
@@ -258,7 +258,7 @@ Answer out loud as if interviewing. Force structure — not "uh, the thing in co
 
 </details>
 
-### 🤝 Behavioral (45 min) — Story #1: Ownership
+### 🤝 Behavioral — Story #1: Ownership
 
 Today's LP: **Ownership** (most-used LP for SRE/DevOps loops).
 
