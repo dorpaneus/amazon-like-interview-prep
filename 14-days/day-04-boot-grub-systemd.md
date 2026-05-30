@@ -18,7 +18,7 @@ End-to-end:
   - **UEFI** (modern) — reads the **EFI System Partition (ESP)**, a FAT32 partition (mounted `/boot/efi`), and executes a `.efi` file listed in NVRAM boot entries.
 2. **Bootloader (GRUB2)** — chosen by firmware. Loads its config (`grub.cfg`), shows menu, loads the chosen kernel + initramfs into memory, jumps to kernel.
 3. **Kernel** — decompresses, initializes drivers compiled into it, mounts the **initramfs** as a temporary root.
-4. **initramfs** — small in-memory filesystem with just enough drivers/tools to find and mount the real root. On RHEL/Fedora it's built by `dracut`. Loads modules for storage controllers, LVM, LUKS, network (if root is on iSCSI/NFS).
+4. **initramfs** — small in-memory filesystem with just enough drivers/tools to find and mount the real root. On RHEL/Fedora it's built by `dracut`. Loads modules for storage controllers, LVM, LUKS, network (if root is on iSCSI/NFS). (Module management itself — `lsmod`, `modprobe`, persistence — is covered in 4E.)
 5. **Switch root** — once initramfs has mounted the real `/`, kernel does `switch_root` and exec's `/sbin/init`.
 6. **PID 1 = systemd** — reads `/etc/systemd/system/default.target`, walks dependency graph, brings up units in parallel where possible.
 7. **Target reached** — typically `multi-user.target` (text login) or `graphical.target` (display manager). Login prompt appears.
@@ -121,10 +121,71 @@ systemd-analyze critical-chain     # the chain on the critical path of boot
 journalctl -b                      # this boot
 journalctl -u sshd -f              # follow (like tail -f)
 journalctl -p err                  # priority err and above (alert/crit/err)
-journalctl -k                      # kernel messages (≈ dmesg)
+journalctl -k                      # kernel messages (≈ dmesg; see 4F)
 ```
 
-### 4E. Do I need to reboot? — running vs installed kernel (15 min)
+### 4E. Kernel modules (20 min)
+
+The kernel doesn't compile in a driver for every possible device — it loads **modules** (`.ko` files) on demand. This keeps the kernel small and lets it support hardware it wasn't built knowing about. The initramfs (4A) bundles just the modules needed to reach the root filesystem; once systemd is up, **udev auto-loads** the rest as devices are detected.
+
+**Where they live:** `/lib/modules/$(uname -r)/`, indexed by `depmod` into `modules.dep` (the dependency map `modprobe` reads).
+
+**The commands:**
+
+```bash
+lsmod                       # what's loaded right now (this is just /proc/modules)
+modinfo ena                 # details on a module: file, params, dependencies
+modprobe dummy              # load a module + its dependencies
+modprobe -r dummy           # unload it (respecting dependencies)
+depmod -a                   # rebuild modules.dep after adding new modules
+```
+
+> [!NOTE]
+> **`modprobe` vs `insmod`:** `modprobe` resolves dependencies and searches `/lib/modules`; `insmod`/`rmmod` are low-level, take a literal `.ko` path, and do **no** dependency resolution. You almost always want `modprobe`.
+
+**Persistence (config, not commands):**
+- `/etc/modules-load.d/*.conf` — modules to force-load at boot.
+- `/etc/modprobe.d/*.conf` — module options and **blacklists** (`blacklist <mod>` to stop one auto-loading).
+- Runtime parameters and the device view live under `/sys/module/<mod>/` and `/sys/class/`.
+
+> [!IMPORTANT]
+> **☁️ The AWS Bridge: ENA and NVMe drivers**
+> Nitro instances present the network card through the **`ena`** module and EBS/instance-store volumes as **`nvme`** devices. An older or hand-built AMI whose initramfs is missing `ena`/`nvme` will boot with **no network** or **fail to find its root volume** on a Nitro instance type — a classic migration trap. Bake the drivers in and regenerate the initramfs (`dracut -f` / `update-initramfs -u`) *before* imaging.
+
+> [!TIP]
+> **Interview hook — "a device isn't recognized / a module won't load":** `modinfo` to confirm it exists and see its deps → `modprobe -v` to watch it load → **`dmesg`** (next section) to see *why* it failed (missing firmware, version mismatch, hardware fault).
+
+### 4F. `dmesg` — the kernel ring buffer (20 min)
+
+`dmesg` prints the **kernel ring buffer**: a fixed-size, in-memory log the kernel writes to from the very first boot message onward — driver init, module loads, hardware errors, filesystem remounts, the **OOM killer's** decisions, and segfaults. Being a *ring* buffer, it overwrites its oldest entries, so it's volatile across reboots unless persisted.
+
+```bash
+dmesg -T                    # human-readable timestamps (raw dmesg uses seconds-since-boot)
+dmesg -l err,warn           # only warnings and errors
+dmesg -w                    # follow live, like tail -f
+dmesg -T | grep -iE 'error|fail|oom|ena|nvme|i/o'
+```
+
+**The persistent view is the journal** (from 4E/4D): the same kernel stream, queryable per boot.
+
+```bash
+journalctl -k -b            # kernel messages, this boot
+journalctl -k -b -1         # the *previous* boot — gold for "it rebooted, why?"
+```
+
+What surfaces here, and which day it ties to:
+- **Disk/EBS I/O errors** and a filesystem going read-only (Day 3).
+- **`Out of memory: Killed process ...`** — the OOM killer's verdict (Day 9; the cloud version is usually a cgroup limit, see Day 2 §2c).
+- **Segfaults** (`segfault at ...`) — the kernel-side record of a `SIGSEGV` (Day 2 §2d).
+- **Link up/down**, `ena`/`nvme` probe failures, module load errors (4E).
+
+> [!IMPORTANT]
+> **☁️ The AWS Bridge: this *is* the EC2 system log.** When SSH is dead, **EC2 → "Get system log"** (instance console output) and the **EC2 Serial Console** surface exactly this kernel ring buffer. Kernel panics, OOM kills, failed `ena`/`nvme` init, and a drop to emergency mode from a bad `fstab` all appear there — it's your fastest read-only signal *before* resorting to the detach-and-rescue EBS dance from 4D.
+
+> [!TIP]
+> **Interview hook — "where do you look first for a hardware or driver problem?"** → `dmesg` / `journalctl -k`. It's the kernel's own voice; everything userspace (logs, metrics) is downstream of it.
+
+### 4G. Do I need to reboot? — running vs installed kernel (15 min)
 
 After patching, the box keeps running the *old* kernel until it reboots. The universal check is to compare the running kernel against the newest one on disk:
 
@@ -164,7 +225,35 @@ journalctl -b | head -100         # the early boot lines
 > [!TIP]
 > **Predict before reading:** Which service is the slowest? Is it on the critical path? (Slow != critical-path; a slow background service that nothing waits on doesn't extend boot time.)
 
-### Lab 2: Custom service (45 min)
+### Lab 2: Modules & the kernel log (25 min)
+
+```bash
+# What's loaded, and the details on one module
+lsmod | head
+modinfo xfs | head            # file, deps, params (try: modinfo ena on an EC2 box)
+
+# Where modules for the running kernel live
+ls /lib/modules/$(uname -r)/kernel/drivers/ | head
+
+# The kernel's own log
+sudo dmesg -T | tail -20          # recent messages, human timestamps
+sudo dmesg -l err,warn | tail     # only warnings/errors
+journalctl -k -b | tail -20       # same stream, persisted for this boot
+```
+
+**Load and unload a harmless module while watching the log:**
+
+```bash
+sudo modprobe -v dummy            # a no-op virtual network driver
+ip link | grep dummy              # it appeared
+sudo dmesg -T | tail -5           # see the kernel announce it
+sudo modprobe -r dummy            # unload
+```
+
+> [!TIP]
+> **Predict before reading:** before running `dmesg`, guess what the last few lines will be (a USB event? a network link change? nothing since boot?). On a server they're often silent — which is itself the signal that "nothing kernel-level is wrong." Then practice the interview reflex: hardware/driver problem → `dmesg`/`journalctl -k` *first*.
+
+### Lab 3: Custom service (45 min)
 
 Create a real systemd service to internalize the unit format:
 
@@ -219,7 +308,7 @@ sudo systemctl edit heartbeat
 sudo systemctl cat heartbeat          # see the drop-in below the original
 ```
 
-### Lab 3: The fstab trap (20 min)
+### Lab 4: The fstab trap (20 min)
 
 The classic boot-breaker. **Take a snapshot of your VM first.**
 
@@ -246,7 +335,7 @@ sudo systemctl daemon-reload
 > [!WARNING]
 > **The Interview Answer:** A broken fstab drops the system into emergency mode. Always use `nofail` on optional mounts (like external EBS data volumes). **Always run `mount -a` after editing fstab** — never `reboot && hope`.
 
-### Lab 4: The `rd.break` rescue (40 min)
+### Lab 5: The `rd.break` rescue (40 min)
 
 This is the headline lab. You're going to "lose" the root password and recover it.
 
@@ -269,7 +358,7 @@ exit
 > [!CAUTION]
 > **If you get locked out** because you skipped the `.autorelabel` step: SELinux blocks login because `/etc/shadow` has the wrong context. Boot back into `rd.break` and `touch /.autorelabel` correctly.
 
-### Lab 5: Boot to emergency vs rescue, manually (20 min)
+### Lab 6: Boot to emergency vs rescue, manually (20 min)
 
 ```bash
 # Switch to rescue from a running system (will drop you to a single-user prompt)
@@ -281,7 +370,7 @@ sudo systemctl emergency               # only / mounted ro, nothing else
 # Press Ctrl-D or systemctl default to come back
 ```
 
-### Lab 6: Is a reboot pending? (20 min)
+### Lab 7: Is a reboot pending? (20 min)
 
 ```bash
 # Before: record the running kernel
@@ -315,6 +404,9 @@ sudo lsof +c0 | grep -w DEL | awk '{print $1}' | sort -u
 8. After resetting the root password with `rd.break`, I can't log in as root. Why?
 9. I added a line to `/etc/fstab` for an NFS share. Reboot fails into emergency. What did I forget?
 10. What does `systemd-analyze blame` show, and why is it not always the answer to "what's slowing my boot"?
+11. Difference between `modprobe` and `insmod`? Where do persistent module options and blacklists live?
+12. A custom AMI boots fine on an older instance type but won't get a network interface (or won't boot at all) on a Nitro instance. What kernel-level thing is likely missing?
+13. SSH to an EC2 instance is dead and it won't come up. Before the detach-EBS-and-rescue procedure, what's the fastest read-only signal AWS gives you, and which Linux log does it show?
 
 <details>
 <summary><strong>Answers</strong> (click to reveal)</summary>
@@ -329,6 +421,9 @@ sudo lsof +c0 | grep -w DEL | awk '{print $1}' | sort -u
 8. SELinux. The new `/etc/shadow` has the wrong context after writing in the chroot. Forgetting `touch /.autorelabel` blocks login.
 9. `nofail` and ideally `x-systemd.device-timeout=N`. NFS especially needs `_netdev` so the mount waits for network. Without `nofail`, fstab failures send the system to emergency.mode at boot.
 10. It shows total time each unit spent in initialization, sorted. Misleading because slow units off the critical path don't extend boot. Use `critical-chain` to see what was actually blocking.
+11. `modprobe` resolves dependencies and searches `/lib/modules` via the `modules.dep` map (built by `depmod`), pulling in prerequisite modules automatically. `insmod`/`rmmod` are low-level: a literal `.ko` path, no dependency resolution. Persistence: `/etc/modules-load.d/*.conf` force-loads at boot; `/etc/modprobe.d/*.conf` holds options and `blacklist` entries. After dropping in new modules, run `depmod -a`.
+12. The required drivers aren't baked into the AMI/initramfs. Nitro presents the NIC via the `ena` module and volumes as `nvme`; an older/PV-era image missing them sees no network or no root device. Fix: install/enable `ena` + `nvme`, regenerate the initramfs (`dracut -f` / `update-initramfs -u`), then re-image.
+13. EC2 → "Get system log" (instance console output), and the EC2 Serial Console, surface the kernel ring buffer — i.e. `dmesg` / `journalctl -k`. Look there first for panics, OOM kills, failed `ena`/`nvme` init, or a drop to emergency mode from a bad `fstab`, before doing the volume-rescue dance.
 
 </details>
 
