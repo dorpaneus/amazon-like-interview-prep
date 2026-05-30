@@ -7,9 +7,9 @@
 
 ---
 
-## 🧠 Morning Block (3h) — The process model
+## 🧠 Morning Block — The process model
 
-### 2A. What is a process? (45 min)
+### 2a. What is a process?
 
 A **process** is a kernel-managed execution context. The kernel keeps a `task_struct` for each one — PID, parent PID, UIDs/GIDs, open files, memory mappings, signal handlers, scheduler state, working directory, namespaces, cgroups.
 
@@ -34,7 +34,7 @@ Key concepts:
 > [!WARNING]
 > **Zombies matter too:** Lots of zombies = parent process has a bug (not calling `wait()`). They're harmless individually but exhaust the PID space if unbounded. To kill a zombie, you must kill its *parent*.
 
-### 2B. Signals (45 min)
+### 2b. Signals
 
 Signals are how the kernel and processes communicate asynchronously. Memorize these — they come up:
 
@@ -59,7 +59,7 @@ Signals are how the kernel and processes communicate asynchronously. Memorize th
 > [!TIP]
 > **Why `SIGHUP` reloads config:** By historical convention, daemons re-read their config on SIGHUP. It's not magic — the daemon's signal handler does it. `nginx -s reload` sends SIGHUP under the hood.
 
-### 2C. `/proc` — the kernel speaks (1h 30min)
+### 2c. `/proc` — the kernel speaks
 
 `/proc` is a **virtual filesystem** populated by the kernel. Every read produces a fresh snapshot. There's no disk involvement — these "files" are kernel functions wearing a filesystem disguise.
 
@@ -103,9 +103,9 @@ Signals are how the kernel and processes communicate asynchronously. Memorize th
 
 ---
 
-## 💻 Midday Block (2.5h) — Hands-on labs
+## 💻 Midday Block — Hands-on labs
 
-### Lab 1: Walk the columns of `ps` and `top` (45 min)
+### Lab 1: Walk the columns of `ps` and `top`
 
 ```bash
 ps aux | head
@@ -132,7 +132,7 @@ In `top`, press:
 - <kbd>c</kbd> — show full command line
 - <kbd>H</kbd> — show threads instead of processes
 
-### Lab 2: Hand-parse `/proc` (45 min)
+### Lab 2: Hand-parse `/proc`
 
 ```bash
 # Pick a long-running process
@@ -156,7 +156,7 @@ ps -o pid,rss,cmd -p $PID
 ```
 The numbers should match. You just did what `ps` does.
 
-### Lab 3: Signals in practice (30 min)
+### Lab 3: Signals in practice
 
 Two terminals.
 
@@ -186,7 +186,7 @@ wait
 # Then send KILL — works
 ```
 
-### Lab 4: Find the noisy process (30 min)
+### Lab 4: Find the noisy process
 
 This is the realistic interview scenario: "the box is slow, what do you check?"
 
@@ -212,9 +212,9 @@ vmstat 1 5                      # column 'r' = runnable processes; > nproc means
 
 ---
 
-## 🎯 Afternoon Block (1.5h) — Drills + Story #2
+## 🎯 Afternoon Block — Drills + Story #2
 
-### Self-check (45 min)
+### Self-check
 
 1. Where does `top` get its data? Be specific.
 2. Difference between VSZ and RSS — which one indicates real memory use?
@@ -243,7 +243,7 @@ vmstat 1 5                      # column 'r' = runnable processes; > nproc means
 
 </details>
 
-### 🤝 Behavioral (45 min) — Story #2: Dive Deep
+### 🤝 Behavioral — Story #2: Dive Deep
 
 Today's LP: **Dive Deep** — heavy weight for SRE/DevOps. Interviewers want to hear that you don't just escalate or guess; you read the data.
 
