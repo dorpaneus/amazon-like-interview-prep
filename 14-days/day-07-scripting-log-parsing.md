@@ -260,7 +260,7 @@ The patterns you'll write under pressure:
 
 ## 💻 Midday Block — Hands-on labs
 
-### Lab 1: Generate a log file to work on (15 min)
+### Lab 1: Generate a log file to work on
 
 ```bash
 mkdir -p ~/day7 && cd ~/day7
