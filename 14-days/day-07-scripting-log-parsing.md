@@ -7,9 +7,9 @@
 
 ---
 
-## 🧠 Morning Block (3h) — Tools and idioms
+## 🧠 Morning Block — Tools and idioms
 
-### 7A. Choosing the right tool (30 min)
+### 7A. Choosing the right tool
 
 The first thing to **say out loud** in a live-coding session: "What scale are we at?" The answer drives the tool.
 
@@ -26,7 +26,7 @@ The first thing to **say out loud** in a live-coding session: "What scale are we
 > 2. Solve the toy version cleanly.
 > 3. **Note that at production scale you wouldn't grep files** — logs would already be in CloudWatch Logs Insights / Athena / Elasticsearch, queryable by structured fields. The grep-the-file solution is for ad-hoc debugging on one box.
 
-### 7B. Bash hygiene (45 min)
+### 7B. Bash hygiene
 
 Bash is everywhere in ops. Bad Bash silently corrupts things. **Five rules** to internalize:
 
@@ -88,7 +88,7 @@ fi
 - `(( arithmetic ))` — integer math, no `$` needed
 - `<()` and `>()` — process substitution; e.g. `diff <(cmd1) <(cmd2)`
 
-### 7C. The text toolkit — `grep`, `awk`, `sed`, `cut`, `sort`, `uniq` (45 min)
+### 7C. The text toolkit — `grep`, `awk`, `sed`, `cut`, `sort`, `uniq`
 
 You should be able to write these one-liners cold.
 
@@ -151,7 +151,7 @@ awk '{print $1}' access.log | sort | uniq -c | sort -rn | head -10
 awk '{c[$1]++} END {for (k in c) print c[k], k}' access.log | sort -rn | head
 ```
 
-### 7D. Bash — patterns for live-coding (1h)
+### 7D. Bash — patterns for live-coding
 
 **The skeleton** for any "process a log file" question using `awk`:
 
@@ -236,7 +236,7 @@ END {
 - **Compressed logs** — `zcat` or `zgrep` to read on the fly.
 - **IPv6** — The simple regex won't match.
 
-### 7E. Regex essentials (30 min)
+### 7E. Regex essentials
 
 The patterns you'll write under pressure:
 
@@ -258,7 +258,7 @@ The patterns you'll write under pressure:
 
 ---
 
-## 💻 Midday Block (2.5h) — Hands-on labs
+## 💻 Midday Block — Hands-on labs
 
 ### Lab 1: Generate a log file to work on (15 min)
 
@@ -289,7 +289,7 @@ head -3 access.log
 
 You now have a 2000-line Apache combined-format log to attack.
 
-### Lab 2: One-liner ladder (30 min)
+### Lab 2: One-liner ladder
 
 Write each of these without looking at the answer first. Then check.
 
@@ -322,7 +322,7 @@ awk -F'[][]' '{print substr($2, 1, 17)}' access.log | sort | uniq -c | sort -rn 
 
 </details>
 
-### Lab 3: The Bash live-coding solution, end to end (45 min)
+### Lab 3: The Bash live-coding solution, end to end
 
 Write this from scratch on paper or in a fresh file before looking. **Time yourself — 15 minutes target.**
 
@@ -410,7 +410,7 @@ chmod +x parselog.sh
 - *"I'm piping the output from the `awk` arrays into `sort` and `head` directly from within `awk` to get the top counts."*
 - *"For a real production environment, if I need robust parsing (like handling escaped quotes in URLs), I would switch to Python or use a dedicated log parser. If it's fleet-scale, I'd query CloudWatch."*
 
-### Lab 4: Make it 10x faster (30 min)
+### Lab 4: Make it 10x faster
 
 Take your script. Generate a bigger log (1M lines):
 
@@ -443,7 +443,7 @@ time grep -E 'HTTP/1\.[01]" [45][0-9]{2}' big.log | awk '{print $7}' | sort | un
 
 You'll often find pipelines of standard tools (`grep | awk | sort | uniq -c`) are heavily optimized. **Saying that out loud — "let me check if pre-filtering with `grep` is faster here" — is exactly the senior-engineer instinct interviewers look for.**
 
-### Lab 5: A Bash production-shape script (30 min)
+### Lab 5: A Bash production-shape script
 
 The version with everything you'd actually want in code review: help text, robust options parsing, and handling compressed files.
 
@@ -548,9 +548,9 @@ This is the version that survives a code review. Mention each detail you'd add �
 
 ---
 
-## 🎯 Afternoon Block (1.5h) — Drills + Story #7
+## 🎯 Afternoon Block — Drills + Story #7
 
-### Self-check (45 min)
+### Self-check
 
 1. Walk through what `set -euo pipefail` does, line by line.
 2. Why `[[` over `[`?
@@ -579,7 +579,7 @@ This is the version that survives a code review. Mention each detail you'd add �
 
 </details>
 
-### 🤝 Behavioral (45 min) — Story #7: Deliver Results
+### 🤝 Behavioral — Story #7: Deliver Results
 
 End-of-week-one LP: **Deliver Results**. Story prompt:
 
