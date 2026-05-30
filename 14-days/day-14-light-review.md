@@ -7,11 +7,11 @@
 
 ---
 
-## 🧠 Morning — low-intensity review (90–120 min)
+## 🧠 Morning — low-intensity review
 
 Pick a quiet spot. Coffee. No labs, no new material, no terminals.
 
-### Quick re-reads (45 min)
+### Quick re-reads
 
 Skim, don't study. You're refreshing, not learning:
 
@@ -20,7 +20,7 @@ Skim, don't study. You're refreshing, not learning:
 - **Your story-bank matrix** — your map of which stories tag to which LPs. This is the most useful thing to have fresh.
 - **Your two weakest stories from yesterday's mock** — read them once, then recite each one out loud once. Don't perfect them.
 
-### Headline recitals (45 min)
+### Headline recitals
 
 These are the "memorized openers" — the moments where having a smooth, prepared answer reads as senior. Practice each one **once** out loud, slowly. Not for memorization — for warm-up.
 
@@ -58,13 +58,13 @@ These are the "memorized openers" — the moments where having a smooth, prepare
 
 That's it. Don't add more. **Don't drill these to perfection** — they should sound conversational, not memorized.
 
-### Optional: one short STAR re-read (15 min)
+### Optional: one short STAR re-read
 
 If a specific behavioral story still feels uneven, read it once, then recite once. Then stop touching it. Resist the urge to keep tweaking — anxiety likes to disguise itself as preparation.
 
 ---
 
-## 📝 Midday — logistics & setup (45 min)
+## 📝 Midday — logistics & setup
 
 This is the part of the day where you actually accomplish something tangible. Boring but important.
 
@@ -120,7 +120,7 @@ This is the hardest part for most prepared candidates. Doing more does not help 
 
 ---
 
-## 🚀 Tuesday morning (Interview Day)
+## 🚀 Morning (Interview Day)
 
 ### The morning ritual
 
@@ -157,7 +157,7 @@ A short list to keep in your head — not to recite, just to hold:
 
 ## 🚨 The panic checklist
 
-If you wake up Tuesday morning and feel suddenly unprepared on some specific thing — *do not* try to learn it. Instead:
+If you wake up morning and feel suddenly unprepared on some specific thing — *do not* try to learn it. Instead:
 
 - **Topic feels fuzzy?** That's normal under stress. You know more than your panic suggests. If it comes up, walk through it slowly out loud; the structure will return.
 - **Story feels weak?** Pick a different story for that LP — that's why the matrix exists.
@@ -170,8 +170,8 @@ If you wake up Tuesday morning and feel suddenly unprepared on some specific thi
 
 You've done two full weeks of focused, structured prep. Your story bank is built. You have memorized openers for every high-frequency interview scenario. You understand the storage stack, the boot chain, TCP/IP, the USE method, eBPF tooling, SELinux, and how to recover an RPM database. You've practiced the live-coding scenario.
 
-This is a strong position. The remaining gap between today and Tuesday is **rest**, not study.
+This is a strong position. The remaining gap is **rest**, not study.
 
 The interview is a conversation, not a test. Treat the interviewers like the colleagues they're trying to decide whether you should become.
 
-Good luck Tuesday.
+Good luck.
