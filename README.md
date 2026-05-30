@@ -28,9 +28,9 @@ This repository contains everything required to pass a heavy infrastructure and 
 | Day | Topic | AWS Context | LP Story |
 | :--- | :--- | :--- | :--- |
 | 1 | [Linux fundamentals — files, permissions, hard/symlinks](14-days/day-01-linux-fundamentals.md) | IAM, S3 objects vs POSIX | **Ownership** |
-| 2 | [Processes & `/proc` — `ps`, `top`, signals, zombie processes](14-days/day-02-processes-proc-signals.md) | EC2 instance state, ECS | **Dive Deep** |
+| 2 | [Processes, the kernel, `/proc` — `ps`, `top`, signals, zombie processes, namespaces & cgroups](14-days/day-02-processes-proc-signals.md) | EC2 instance state, ECS | **Dive Deep** |
 | 3 | [Filesystems — mount, `fsck`, LVM recovery, LUKS, iSCSI](14-days/day-03-filesystems-lvm-luks-iscsi.md) | EBS volumes, EFS, Instance Store | **Insist on the Highest Standards** |
-| 4 | [Boot & systemd — GRUB, services, recovery, regaining root](14-days/day-04-boot-grub-systemd.md) | EC2 Rescue, AMI lifecycle | **Bias for Action** |
+| 4 | [Boot & systemd — GRUB, services, recovery, regaining root, kernel modules, `dmesg`](14-days/day-04-boot-grub-systemd.md) | EC2 Rescue, AMI lifecycle | **Bias for Action** |
 | 5 | [Networking I — TCP/IP, DNS, DHCP, "loading a website"](14-days/day-05-networking-tcp-dns-dhcp.md) | Route53, VPC subnets, IGW | **Customer Obsession** |
 | 6 | [Networking II — `tcpdump`, `ss`, `mtr`, firewalls, NAT](14-days/day-06-networking-tcpdump-firewalls-nat.md) | Security Groups, NACLs, NAT GW | **Earn Trust** |
 | 7 | [Scripting & log parsing — Python, regex, Bash idioms](14-days/day-07-scripting-log-parsing.md) | CloudWatch Logs, Lambda | **Deliver Results** |
@@ -39,8 +39,8 @@ This repository contains everything required to pass a heavy infrastructure and 
 
 | Day | Topic | AWS Context | LP Story |
 | :--- | :--- | :--- | :--- |
-| 8 | [Performance analysis — `vmstat`, `iostat`, `sar`, USE method](14-days/day-08-performance-analysis-use-method.md) | CloudWatch metrics, EC2 sizing | **Are Right, A Lot** |
-| 9 | [Memory tuning — hugepages, swappiness, NUMA, OOM](14-days/day-09-memory-tuning.md) | Memory-optimized instances | **Learn and Be Curious** |
+| 8 | [Performance analysis — `vmstat`, `iostat`, `sar`, USE method, CPU scheduler (CFS/EEVDF)](14-days/day-08-performance-analysis-use-method.md) | CloudWatch metrics, EC2 sizing | **Are Right, A Lot** |
+| 9 | [Memory tuning — hugepages, swappiness, NUMA, OOM (host & cgroup)](14-days/day-09-memory-tuning.md) | Memory-optimized instances | **Learn and Be Curious** |
 | 10 | [Disk/network tuning — I/O schedulers, BDP, buffer sizing](14-days/day-10-disk-network-tuning.md) | EBS IOPS, Nitro Enclaves | **Invent and Simplify** |
 | 11 | [App debugging — `strace`, `gdb`, `valgrind`, `perf`, eBPF](14-days/day-11-app-debugging.md) | X-Ray, application-level traces | **Think Big** |
 | 12 | [Security & packages — SELinux, PAM, LDAP/Kerberos](14-days/day-12-security-package-management.md) | IAM Identity Center, Systems Manager | **Have Backbone; Disagree & Commit** |
