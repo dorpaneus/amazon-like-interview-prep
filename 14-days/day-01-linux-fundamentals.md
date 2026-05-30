@@ -12,7 +12,7 @@
 
 ## 🧠 Morning Block — The Unix file model
 
-### 1A. Everything is a file
+### 1a. Everything is a file
 
 # Understanding Linux File Systems: Inodes and Directory Entries
 
@@ -77,7 +77,7 @@ A single long-listing line packs **seven fields**, space-separated. Take this ex
 > [!TIP]
 > **Quick way to remember the order:** > perms → links → owner → group → size → time → name.
 
-### 1B. Permissions deep
+### 1b. Permissions deep
 
 Octal cheat: `r=4, w=2, x=1`. So `755 = rwxr-xr-x`, `644 = rw-r--r--`, `600 = rw-------`.
 
@@ -97,7 +97,7 @@ Lowercase `s/t` means the underlying execute bit *is* set. Uppercase `S/T` means
 
 **umask** acts as a filter that *turns off* permissions at file creation (it is a bitwise mask, not simple subtraction). Default `0022` strips write access from group and others → new files get `644` (`rw-r--r--`), dirs `755` (`rwxr-xr-x`). With `umask 0027`, it strips write from group, and all access from others → files get `640` (`rw-r-----`), dirs `750` (`rwxr-x---`).
 
-### 1C. Hard vs symbolic links (1h)
+### 1c. Hard vs symbolic links
 
 Today's depth: **the link count column** (column 2 of `ls -l`).
 
@@ -124,7 +124,7 @@ ext4 has `crtime` (creation) in the inode, but POSIX `stat()` doesn't expose it 
 
 The goal isn't to type commands. It's to **predict the outcome before pressing <kbd>Enter</kbd>**, then verify.
 
-### Lab 1: Decode `ls -l` field by field (30 min)
+### Lab 1: Decode `ls -l` field by field
 
 ```bash
 mkdir ~/day1 && cd ~/day1
@@ -170,7 +170,7 @@ ls -ld /tmp/scratch
 > [!WARNING]
 > Why doesn't `cp` preserve setuid by default? **Security** — copying a setuid binary owned by root would let anyone create a privilege-escalation tool. Use `cp -p` to preserve mode.
 
-### Lab 3: Links and deletion — including the FD trick (45 min)
+### Lab 3: Links and deletion — including the FD trick
 
 ```bash
 echo "original content" > original.txt
