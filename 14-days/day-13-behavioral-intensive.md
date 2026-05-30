@@ -307,7 +307,7 @@ Then stop. Close the laptop. Go for a walk.
 
 ---
 
-## 📅 Tomorrow (Day 14, Mon May 11) — Light review only
+## 📅 Tomorrow (Day 14) — Light review only
 
 Your only assignments tomorrow:
 1. Re-read the JD once.
