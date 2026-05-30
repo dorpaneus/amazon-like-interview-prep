@@ -264,25 +264,47 @@ The patterns you'll write under pressure:
 
 ```bash
 mkdir -p ~/day7 && cd ~/day7
-# Using a simple python one-liner just to generate data
-python3 - <<'EOF' > access.log
-import random, datetime
-random.seed(42)
-ips = ['10.0.5.42','10.0.5.43','192.168.1.5','172.16.0.10','203.0.113.7']
-methods = ['GET']*8 + ['POST']*2
-paths = ['/','/api/users','/api/orders','/login','/health','/static/app.css']
-statuses = [200]*70 + [301]*5 + [404]*15 + [500]*8 + [503]*2
-sizes = [random.randint(100,9000) for _ in range(20)]
-start = datetime.datetime(2026, 5, 1, 10, 0, 0)
-for i in range(2000):
-    ts = (start + datetime.timedelta(seconds=i*3)).strftime('%d/%b/%Y:%H:%M:%S +0000')
-    ip = random.choice(ips)
-    m = random.choice(methods)
-    p = random.choice(paths)
-    s = random.choice(statuses)
-    sz = random.choice(sizes)
-    print(f'{ip} - - [{ts}] "{m} {p} HTTP/1.1" {s} {sz} "-" "Mozilla/5.0"')
-EOF
+
+# Using a pure bash block to generate data and redirect output
+{
+  # Set a seed so the randomness is repeatable (similar to random.seed)
+  RANDOM=42
+  
+  ips=('10.0.5.42' '10.0.5.43' '192.168.1.5' '172.16.0.10' '203.0.113.7')
+  paths=('/' '/api/users' '/api/orders' '/login' '/health' '/static/app.css')
+  
+  # Convert starting date to an epoch timestamp for easy incrementing
+  epoch=$(date -u -d "2026-05-01 10:00:00" +%s)
+  
+  for ((i=0; i<2000; i++)); do
+    # Format the timestamp directly using Bash 4.2+ builtin printf
+    ts=$(TZ=UTC printf '%(%d/%b/%Y:%H:%M:%S +0000)T' "$epoch")
+    
+    ip=${ips[RANDOM % ${#ips[@]}]}
+    p=${paths[RANDOM % ${#paths[@]}]}
+    
+    # Methods: 80% GET, 20% POST
+    if (( RANDOM % 10 < 8 )); then m="GET"; else m="POST"; fi
+    
+    # Statuses: 70% 200, 5% 301, 15% 404, 8% 500, 2% 503
+    rand_status=$((RANDOM % 100))
+    if (( rand_status < 70 )); then s=200
+    elif (( rand_status < 75 )); then s=301
+    elif (( rand_status < 90 )); then s=404
+    elif (( rand_status < 98 )); then s=500
+    else s=503; fi
+    
+    # Sizes: Random integer between 100 and 9000
+    sz=$((RANDOM % 8901 + 100))
+    
+    printf '%s - - [%s] "%s %s HTTP/1.1" %s %s "-" "Mozilla/5.0"\n' \
+      "$ip" "$ts" "$m" "$p" "$s" "$sz"
+      
+    # Increment the time by 3 seconds
+    ((epoch+=3))
+  done
+} > access.log
+
 wc -l access.log
 head -3 access.log
 ```
